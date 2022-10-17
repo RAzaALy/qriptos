@@ -9,7 +9,6 @@ import Typography from "@material-ui/core/Typography";
 import { makeStyles } from "@material-ui/core/styles";
 import DialogBox from "../components/DialogBox";
 import FormControl from "@material-ui/core/FormControl";
-import FormGroup from "@material-ui/core/FormGroup";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import {
   useGenerateKey,
@@ -18,7 +17,6 @@ import {
 } from "../Services/authenticationService";
 import { authenticationService } from "../Services/authenticationService";
 import Container from "@material-ui/core/Container";
-import { useEffect } from "react";
 const useStyles = makeStyles((theme) => ({
   paper: {
     marginTop: theme.spacing(8),
@@ -56,9 +54,9 @@ const GetKey = (props) => {
   const GetNames = () => {
     getNames()
       .then(function (response) {
-        setName(response?.data[0]);
-        setAddress(authenticationService.currentUserValue.data.address)
-        setData(response?.data);
+        setName(response[0]);
+        setAddress(authenticationService.currentUserValue.address)
+        setData(response);
       })
       .catch(function (error) {
         console.log(error);

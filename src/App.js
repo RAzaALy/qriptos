@@ -8,9 +8,10 @@ import history from "./Utilities/history";
 import PrivateRoute from "./Utilities/private-route";
 import GetKey from "./pages/GetKey";
 import Welcome from "./pages/Welcome";
-import CreatePassword from './pages/CreatePassword.jsx'
+import CreatePassword from "./pages/CreatePassword.jsx";
 import Chat from "./Chat/Chat";
-import Profile from './pages/Profile.jsx'
+import Login from "./pages/Login";
+import NewChat from "./pages/NewChat";
 
 const theme = createMuiTheme({
   palette: {
@@ -43,8 +44,10 @@ function App() {
           <Route path="/" exact component={Welcome} />
           <Route path="/generateKey" component={GetKey}></Route>
           <Route path="/createPassword" component={CreatePassword}></Route>
+          <Route path="/login" component={Login}></Route>
           <PrivateRoute path="/chat" component={Chat} />
-          <PrivateRoute path="/profile" component={Profile} />
+          <PrivateRoute path="/newChat" component={NewChat} />
+        
         </Router>
       </SnackbarProvider>
     </ThemeProvider>

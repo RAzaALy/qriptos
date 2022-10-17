@@ -1,15 +1,15 @@
-import { authenticationService } from '../Services/authenticationService';
+import { authenticationService } from "../Services/authenticationService";
 
 function authHeader() {
-    const currentUser = authenticationService.currentUserValue;
-    if (currentUser && currentUser.token) {
-        return {
-            Authorization: `Bearer ${currentUser.token}`,
-            'Content-Type': 'application/json',
-        };
-    } else {
-        return {};
-    }
+  const currentUser = authenticationService.currentUserValue;
+  if (currentUser) {
+    return {
+      "Content-Type": "application/json",
+      "Connection": "keep-alive"
+    };
+  } else {
+    return {};
+  }
 }
 
 export default authHeader;

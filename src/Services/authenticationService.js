@@ -1,7 +1,6 @@
 import { BehaviorSubject } from "rxjs";
 import { useSnackbar } from "notistack";
-
-import useHandleResponse from "../Utilities/handle-response";
+import { instance } from "../Utilities/instance";
 
 const currentUserSubject = new BehaviorSubject(
   JSON.parse(localStorage.getItem("currentUser"))
@@ -17,29 +16,20 @@ export const authenticationService = {
 
 export function useGenerateKey() {
   const { enqueueSnackbar } = useSnackbar();
-  const handleResponse = useHandleResponse();
 
   const getKey = () => {
-    const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    };
-
-    return fetch(
-      `${process.env.REACT_APP_API_URL}/api/user/wallet/saveKey`,
-      requestOptions
-    )
-      .then(handleResponse)
-      .then((data) => {
+    return instance
+      .post("/api/user/wallet/saveKey")
+      .then(({ data }) => {
         enqueueSnackbar(data.message, {
           variant: "success",
         });
-        localStorage.setItem("currentUser", JSON.stringify(data));
-        currentUserSubject.next(data);
-        return data;
+        localStorage.setItem("currentUser", JSON.stringify(data.data));
+        currentUserSubject.next(data.data);
+        return data.data;
       })
-      .catch(function () {
-        enqueueSnackbar("Failed to Login", {
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
           variant: "error",
         });
       });
@@ -50,28 +40,18 @@ export function useGenerateKey() {
 
 export function useGenerateName() {
   const { enqueueSnackbar } = useSnackbar();
-  const handleResponse = useHandleResponse();
-
   const getNames = () => {
-    const requestOptions = {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    };
-
-    return fetch(
-      `${process.env.REACT_APP_API_URL}/api/user/wallet/generateName`,
-      requestOptions
-    )
-      .then(handleResponse)
-      .then((data) => {
+    return instance
+      .get("/api/user/wallet/generateName")
+      .then(({ data }) => {
         enqueueSnackbar(data.message, {
           variant: "success",
         });
 
-        return data;
+        return data.data;
       })
-      .catch(function () {
-        enqueueSnackbar("Failed to Generate Name", {
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
           variant: "error",
         });
       });
@@ -81,29 +61,20 @@ export function useGenerateName() {
 }
 export function useSaveName() {
   const { enqueueSnackbar } = useSnackbar();
-  const handleResponse = useHandleResponse();
 
   const saveName = (address, userName) => {
-    const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address, userName }),
-    };
-
-    return fetch(
-      `${process.env.REACT_APP_API_URL}/api/user/wallet/saveName`,
-      requestOptions
-    )
-      .then(handleResponse)
-      .then((data) => {
+    return instance
+      .post("/api/user/wallet/saveName", { address, userName })
+      .then(({ data }) => {
         enqueueSnackbar(data.message, {
           variant: "success",
         });
-
-        return data;
+        localStorage.setItem("currentUser", JSON.stringify(data.data));
+        currentUserSubject.next(data.data);
+        return data.data;
       })
-      .catch(function () {
-        enqueueSnackbar("Failed to Save Name", {
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
           variant: "error",
         });
       });
@@ -114,43 +85,49 @@ export function useSaveName() {
 
 export function useSavePassword() {
   const { enqueueSnackbar } = useSnackbar();
-  const handleResponse = useHandleResponse();
 
   const savePassword = (address, password) => {
-    const requestOptions = {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address, password }),
-    };
-
-    return fetch(
-      `${process.env.REACT_APP_API_URL}/api/user/wallet/savePassword`,
-      requestOptions
-    )
-      .then(handleResponse)
-      .then((data) => {
+    return instance
+      .post("/api/user/wallet/savePassword", { address, password })
+      .then(({ data }) => {
         enqueueSnackbar(data.message, {
           variant: "success",
         });
-        localStorage.setItem("currentUser", JSON.stringify(data));
-        currentUserSubject.next(data);
-
-        return data;
+        localStorage.setItem("currentUser", JSON.stringify(data.data));
+        currentUserSubject.next(data.data);
+        return data.data;
       })
-      .catch(function (response) {
-        if (response) {
-          enqueueSnackbar(response, {
-            variant: "error",
-          });
-        } else {
-          enqueueSnackbar("Failed to Register", {
-            variant: "error",
-          });
-        }
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
       });
   };
 
   return savePassword;
+}
+export function useLogin() {
+  const { enqueueSnackbar } = useSnackbar();
+  const login = (address, password) => {
+    return instance
+      .post("/api/user/wallet/login", { address, password })
+      .then(({ data }) => {
+        console.log(data, "res");
+        enqueueSnackbar(data.message, {
+          variant: "success",
+        });
+        localStorage.setItem("currentUser", JSON.stringify(data.data));
+        currentUserSubject.next(data.data);
+
+        return data.data;
+      })
+      .catch(function (err) {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return login;
 }
 
 function logout() {

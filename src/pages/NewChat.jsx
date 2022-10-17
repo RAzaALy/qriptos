@@ -1,15 +1,17 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { makeStyles } from "@material-ui/styles";
 import Button from "@material-ui/core/Button";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
+import Link from "@material-ui/core/Link";
 import TextField from "@material-ui/core/TextField";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import Container from "@material-ui/core/Container";
+import { useNewChat } from "../Services/userService";
+import { Link as RouterLink } from "react-router-dom";
 import history from "../Utilities/history";
-import { useSavePassword } from "../Services/authenticationService";
-import { authenticationService } from "../Services/authenticationService";
+
 const useStyles = makeStyles((theme) => ({
   paper: {
     marginTop: theme.spacing(8),
@@ -26,48 +28,36 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const CreatePassword = (props) => {
-  const savePassword = useSavePassword();
-  const [address, setAddress] = useState("");
+const NewChat = () => {
   const classes = useStyles();
+  const newChat = useNewChat();
+ 
 
-  useEffect(() => {
-    setAddress(authenticationService.currentUserValue.address);
-  }, []);
-
-
+  useEffect(() => {}, []);
   return (
     <Container component="main" maxWidth="xs">
+      <Typography component="h1" variant="h5" align="center">
+        New Chat
+      </Typography>
       <div className={classes.paper}>
         <Grid container>
           <Grid item>
-            <Typography component="h1" variant="h5" align="center">
-            Create a Password 
-            </Typography>
             <Formik
               initialValues={{
-                password: "",
-                password2: "",
+                chatKey: "",
               }}
               validationSchema={Yup.object().shape({
-                password: Yup.string()
-                  .required("Password is Required")
-                  .max(100, "Password too long")
-                  .min(6, "Password should be at least 6 characters long"),
-                password2: Yup.string().oneOf(
-                  [Yup.ref("password"), null],
-                  "Passwords do not match"
-                ),
+                chatKey: Yup.string()
+                  .required("ChatKey is Required")
+                  .max(100, "ChatKey too long")
+                  .min(16, "ChatKey should be at least 16 characters long"),
               })}
-              onSubmit={(
-                { password, password2 },
-                { setStatus, setSubmitting }
-              ) => {
+              onSubmit={({ chatKey }, { setStatus, setSubmitting }) => {
                 setStatus();
-                savePassword(address, password).then(
+                newChat(chatKey).then(
                   (user) => {
                     const { from } = history.location.state || {
-                      from: { pathname: "/login" },
+                      from: { pathname: "/chat" },
                     };
                     history.push(from);
                   },
@@ -90,35 +80,19 @@ const CreatePassword = (props) => {
               }) => (
                 <form onSubmit={handleSubmit} className={classes.form}>
                   <TextField
-                    id="password"
+                    id="chatKey"
                     className={classes.textField}
-                    name="password"
-                    label="Password"
+                    name="chatKey"
+                    label="PassworEnter ENS or Chat Key"
                     fullWidth={true}
                     variant="outlined"
                     margin="normal"
                     required={true}
-                    helperText={touched.password ? errors.password : ""}
-                    error={touched.password && Boolean(errors.password)}
-                    value={values.password}
+                    helperText={touched.chatKey ? errors.chatKey : ""}
+                    error={touched.chatKey && Boolean(errors.chatKey)}
+                    value={values.chatKey}
                     onChange={handleChange}
-                    type="password"
-                  />
-
-                  <TextField
-                    id="password2"
-                    className={classes.textField}
-                    name="password2"
-                    label="Confirm Password"
-                    fullWidth={true}
-                    variant="outlined"
-                    margin="normal"
-                    required={true}
-                    helperText={touched.password2 ? errors.password2 : ""}
-                    error={touched.password2 && Boolean(errors.password2)}
-                    value={values.password2}
-                    onChange={handleChange}
-                    type="password"
+                    type="string"
                   />
 
                   <Button
@@ -128,17 +102,16 @@ const CreatePassword = (props) => {
                     color="primary"
                     className={classes.submit}
                   >
-                    Save Password
+                    ADD
                   </Button>
                 </form>
               )}
             </Formik>
           </Grid>
-          
         </Grid>
       </div>
     </Container>
   );
 };
 
-export default CreatePassword;
+export default NewChat;

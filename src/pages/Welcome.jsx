@@ -8,7 +8,7 @@ import {
   Container,
   Checkbox,
 } from "@material-ui/core";
-
+import Link from "@material-ui/core/Link";
 import ExitToAppIcon from "@material-ui/icons/ExitToApp";
 
 const Welcome = () => {
@@ -22,15 +22,20 @@ const Welcome = () => {
   };
 
   return (
-    <Container>
+    <Container component="main" maxWidth="xs" style={{ marginTop: "150px" }}>
       <div>
-        <Typography variant="h4" color="secondary">
+        <Typography
+          variant="h4"
+          color="secondary"
+          style={{ marginBottom: "20px" }}
+        >
           <strong>Welcome to Qriptos</strong>
-          <p>
+          <br />
+          <small>
             Create your wallet, a digital vault to store your NFT'S. Invite
             friends, business partners and family to chat. Scan, sign and make
             payments. And all ot this encrypted !
-          </p>
+          </small>
         </Typography>
 
         <FormControlLabel
@@ -72,6 +77,11 @@ finances"
           Get Started
         </Button>
       </div>
+      <Typography style={{ cursor: "pointer", marginTop: "30px" }}>
+        <Link component={RouterLink} to="/login">
+          Already have an account
+        </Link>
+      </Typography>
     </Container>
   );
 };

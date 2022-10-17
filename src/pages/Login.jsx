@@ -1,14 +1,21 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { makeStyles } from "@material-ui/styles";
 import Button from "@material-ui/core/Button";
 import Grid from "@material-ui/core/Grid";
 import Typography from "@material-ui/core/Typography";
+import Link from "@material-ui/core/Link";
 import TextField from "@material-ui/core/TextField";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import Container from "@material-ui/core/Container";
+import { Link as RouterLink } from "react-router-dom";
 import history from "../Utilities/history";
-import { useSavePassword } from "../Services/authenticationService";
+import { useLogin } from "../Services/authenticationService";
+import DialogBox from "../components/DialogBox";
+import Radio from "@material-ui/core/Radio";
+import RadioGroup from "@material-ui/core/RadioGroup";
+import FormControl from "@material-ui/core/FormControl";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
 import { authenticationService } from "../Services/authenticationService";
 const useStyles = makeStyles((theme) => ({
   paper: {
@@ -26,48 +33,98 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const CreatePassword = (props) => {
-  const savePassword = useSavePassword();
+const Login = () => {
+  const login = useLogin();
   const [address, setAddress] = useState("");
+  const [name, setName] = useState("");
+  const [data, setData] = useState({ name: "", address: "" });
+  const [infoModal, setInfoModal] = useState(false);
   const classes = useStyles();
+  const handleChange = (event) => {
+    setName(event.target.value);
+  };
 
   useEffect(() => {
     setAddress(authenticationService.currentUserValue.address);
+    setData({
+      name: authenticationService.currentUserValue.userName,
+      address: authenticationService.currentUserValue.address,
+    });
   }, []);
-
-
   return (
     <Container component="main" maxWidth="xs">
+      <Typography component="h1" variant="h5" align="center">
+        Login
+      </Typography>
       <div className={classes.paper}>
+        <DialogBox
+          modalOpen={infoModal}
+          setModalOpen={setInfoModal}
+          title="Your Keys"
+        >
+          <div className={classes.root}>
+            <FormControl component="fieldset">
+              <RadioGroup
+                aria-label="chat"
+                name="chat"
+                value={name}
+                onChange={handleChange}
+              >
+               
+                  <FormControlLabel
+                  
+                    key={data.address}
+                    value={data.name}
+                    control={<Radio />}
+                    label={data.name}
+                  />
+               
+              </RadioGroup>
+            </FormControl>
+          </div>
+
+          <Button
+            color="primary"
+            variant="contained"
+            size="small"
+            type="button"
+            component={RouterLink}
+            to="/generateKey"
+            className={classes.submitButton}
+          >
+            Adanother Existing Key
+          </Button>
+        </DialogBox>
         <Grid container>
           <Grid item>
-            <Typography component="h1" variant="h5" align="center">
-            Create a Password 
-            </Typography>
+            <Button
+              aria-controls="simple-menu"
+              aria-haspopup="true"
+              variant="contained"
+              color="primary"
+              onClick={() => setInfoModal(true)}
+              fullWidth={true}
+            >
+              Select Chat Account
+            </Button>
+          </Grid>
+          <Grid item>
             <Formik
               initialValues={{
                 password: "",
-                password2: "",
               }}
               validationSchema={Yup.object().shape({
                 password: Yup.string()
                   .required("Password is Required")
                   .max(100, "Password too long")
                   .min(6, "Password should be at least 6 characters long"),
-                password2: Yup.string().oneOf(
-                  [Yup.ref("password"), null],
-                  "Passwords do not match"
-                ),
               })}
-              onSubmit={(
-                { password, password2 },
-                { setStatus, setSubmitting }
-              ) => {
+              onSubmit={({ password }, { setStatus, setSubmitting }) => {
                 setStatus();
-                savePassword(address, password).then(
+                login(address, password).then(
                   (user) => {
                     const { from } = history.location.state || {
-                      from: { pathname: "/login" },
+                      from: { pathname: "/chat" },
                     };
                     history.push(from);
                   },
@@ -105,22 +162,6 @@ const CreatePassword = (props) => {
                     type="password"
                   />
 
-                  <TextField
-                    id="password2"
-                    className={classes.textField}
-                    name="password2"
-                    label="Confirm Password"
-                    fullWidth={true}
-                    variant="outlined"
-                    margin="normal"
-                    required={true}
-                    helperText={touched.password2 ? errors.password2 : ""}
-                    error={touched.password2 && Boolean(errors.password2)}
-                    value={values.password2}
-                    onChange={handleChange}
-                    type="password"
-                  />
-
                   <Button
                     type="submit"
                     fullWidth={true}
@@ -128,17 +169,21 @@ const CreatePassword = (props) => {
                     color="primary"
                     className={classes.submit}
                   >
-                    Save Password
+                    Login
                   </Button>
                 </form>
               )}
             </Formik>
           </Grid>
-          
         </Grid>
       </div>
+      <Typography style={{ cursor: "pointer", marginTop: "20px" }}>
+        <Link component={RouterLink} to="/generateKey">
+          Generate New Key
+        </Link>
+      </Typography>
     </Container>
   );
 };
 
-export default CreatePassword;
+export default Login;

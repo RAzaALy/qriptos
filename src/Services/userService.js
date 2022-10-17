@@ -1,27 +1,63 @@
-import useHandleResponse from '../Utilities/handle-response';
-import authHeader from '../Utilities/auth-header';
-import { useSnackbar } from 'notistack';
+import { useSnackbar } from "notistack";
+import { instance } from "../Utilities/instance";
 
-export function useGetUsers() {
-    const { enqueueSnackbar } = useSnackbar();
-    const handleResponse = useHandleResponse();
-    const requestOptions = {
-        method: 'GET',
-        headers: authHeader(),
-    };
+export function useNewChat() {
+  const { enqueueSnackbar } = useSnackbar();
+  const newChat = (key) => {
+    return instance
+      .post("/api/user/addContact", { address: key })
+      .then(({ data }) => {
+        enqueueSnackbar(data.message, {
+          variant: "success",
+        });
 
-    const getUsers = () => {
-        return fetch(
-            `${process.env.REACT_APP_API_URL}/api/users`,
-            requestOptions
-        )
-            .then(handleResponse)
-            .catch(() =>
-                enqueueSnackbar('Could not load Users', {
-                    variant: 'error',
-                })
-            );
-    };
+        return data.data;
+      })
+      .catch(function (err) {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return newChat;
+}
+export function useViewContact() {
+  const { enqueueSnackbar } = useSnackbar();
+  const viewContact = () => {
+    return instance
+      .get("/api/user/viewContact")
+      .then(({ data }) => {
+        enqueueSnackbar(data.message, {
+          variant: "success",
+        });
 
-    return getUsers;
+        return data.data;
+      })
+      .catch(function (err) {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return viewContact;
+}
+export function useViewProfile() {
+  const { enqueueSnackbar } = useSnackbar();
+  const viewProfile = (key) => {
+    return instance
+      .get(`api/chat/viewUser/${key}`)
+      .then(({ data }) => {
+        enqueueSnackbar(data.message, {
+          variant: "success",
+        });
+
+        return data.data;
+      })
+      .catch(function (err) {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return viewProfile;
 }
