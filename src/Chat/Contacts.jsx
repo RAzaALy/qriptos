@@ -4,21 +4,19 @@ import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
-import { makeStyles } from "@material-ui/core/styles";
 import IconButton from "@material-ui/core/IconButton";
 import TextField from "@material-ui/core/TextField";
 import { SearchOutlined } from "@material-ui/icons";
-import AddIcon from "@material-ui/icons/Add";
 import PersonIcon from "@material-ui/icons/Person";
 import GroupIcon from "@material-ui/icons/Group";
+import { makeStyles } from "@material-ui/core/styles";
+import AddIcon from "@material-ui/icons/Add";
+import { useGetChats } from "../Services/chatService";
+import commonUtilites from "../Utilities/common";
 import Menu from "@material-ui/core/Menu";
 import MenuItem from "@material-ui/core/MenuItem";
-import { useGetChats } from "../Services/chatService";
 import { Fragment } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import socketIOClient from "socket.io-client";
-import commonUtilites from "../Utilities/common";
-import { authenticationService } from "../Services/authenticationService";
 import { useViewContact, useViewProfile } from "../Services/userService";
 
 const useStyles = makeStyles((theme) => ({
@@ -37,9 +35,6 @@ const useStyles = makeStyles((theme) => ({
     maxHeight: "calc(100vh - 112px)",
     overflowY: "auto",
   },
-  avatar: {
-    margin: theme.spacing(0, 3, 0, 1),
-  },
   search: {
     margin: "8px",
     width: "80%",
@@ -51,25 +46,18 @@ const useStyles = makeStyles((theme) => ({
     cursor: "pointer",
   },
 }));
-const Users = (props) => {
-  const [address] = useState(authenticationService.currentUserValue.address);
+
+const Contacts = (props) => {
   const classes = useStyles();
-  const [data, setData] = useState([])
+  const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
   const [profileMenu, setProfileMenu] = useState(null);
-  const [chats, setChats] = useState([]);
-  const [profile, setProfile] = useState([]);
+  const [profile, setProfile] = useState();
   const [contacts, setContacts] = useState([]);
-  const [newChat, setNewChat] = useState(null);
-
-  const getChats = useGetChats();
   const getContacts = useViewContact();
   const getProfile = useViewProfile();
 
   useEffect(() => {
-    getChats()
-      .then((res) => setChats(res))
-      .catch((err) => console.log(err, "error"));
     getContacts()
       .then((res) => {
         setContacts(res);
@@ -94,30 +82,15 @@ const Users = (props) => {
 
     setSearch(keyword);
   };
-
-  const viewProfile = (u, key, name) => {
-    props.setUser(u);
-    props.setScope(name);
-    getProfile(key)
-      .then((res) => setProfile(res))
+  const viewProfile = async (key) => {
+    await getProfile(key)
+      .then((res) => {
+        props.setUser(res);
+        props.setScope(res.userName);
+        setProfile(res._id);
+      })
       .catch((err) => console.log(err, "error"));
   };
-  useEffect(() => {
-    const socket = socketIOClient(process.env.REACT_APP_API_URL);
-
-    socket.on("connect", () => {
-      console.log("connect", socket);
-    });
-    socket.emit("connect_user", { address: address }, (response) => {
-      console.log(response, "responeh");
-    });
-    socket.on("connect_user", (res) => {
-      console.log("connect user", res);
-    });
-
-    return () => socket.close();
-  }, []);
-
   return (
     <Fragment>
       <div className={classes.center}>
@@ -171,13 +144,7 @@ const Users = (props) => {
               <ListItem
                 className={classes.listItem}
                 key={u._id}
-                onClick={() =>
-                  viewProfile(
-                    u,
-                    u.chatWithUserId.address,
-                    u.chatWithUserId.userName
-                  )
-                }
+                onClick={() => viewProfile(u.chatWithUserId.address)}
                 button
               >
                 <ListItemAvatar className={classes.avatar}>
@@ -200,4 +167,4 @@ const Users = (props) => {
   );
 };
 
-export default Users;
+export default Contacts;

@@ -1,15 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Grid from "@material-ui/core/Grid";
 import Paper from "@material-ui/core/Paper";
-
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
-
+import socketIOClient from "socket.io-client";
 import Header from "../Layout/Header";
 import ChatBox from "./ChatBox";
-import Users from "./Users";
-
+import Contacts from "./Contacts";
+import Chats from "./Chats";
+import { authenticationService } from "../Services/authenticationService";
+export const socket = socketIOClient(process.env.REACT_APP_API_URL, {
+  withCredentials: true,
+});
 const useStyles = makeStyles((theme) => ({
   paper: {
     minHeight: "calc(100vh - 64px)",
@@ -32,15 +35,28 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const Chat = () => {
+  const [address] = useState(authenticationService.currentUserValue.address);
   const [scope, setScope] = useState("Chat");
   const [tab, setTab] = useState(0);
   const [user, setUser] = useState(null);
+
   const classes = useStyles();
 
   const handleChange = (e, newVal) => {
     setTab(newVal);
   };
 
+  useEffect(() => {
+    socket.emit("connect_user", { address: address }, (response) => {
+      console.log(response, "responeh");
+    });
+    socket.on("connect_user", (res) => {
+      localStorage.setItem("currentUser", JSON.stringify(res));
+      setUser(res);
+    });
+
+    return () => socket.close();
+  }, []);
   return (
     <React.Fragment>
       <Header />
@@ -56,13 +72,11 @@ const Chat = () => {
                 textColor="primary"
               >
                 <Tab label="Chats" />
-                {/* <Tab label="Chats" /> */}
+                <Tab label="Contacts" />
               </Tabs>
             </Paper>
-            {tab === 0 && <Users setUser={setUser} setScope={setScope} />}
-            {/* {tab === 1 && (
-              <Conversations setUser={setUser} setScope={setScope} />
-            )} */}
+            {tab === 0 && <Chats setUser={setUser} setScope={setScope} />}
+            {tab === 1 && <Contacts setUser={setUser} setScope={setScope} />}
           </Paper>
         </Grid>
         <Grid item md={8}>

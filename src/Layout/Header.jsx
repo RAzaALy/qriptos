@@ -92,12 +92,12 @@ const Header = () => {
               horizontal: "right",
             }}
           >
+            <MenuItem onClick={() => history.push("/profile")}>Profile</MenuItem>
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
     </div>
-  );
-};
+  );};
 
 export default Header;

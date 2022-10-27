@@ -10,12 +10,14 @@ import ListItem from "@material-ui/core/ListItem";
 import ListItemText from "@material-ui/core/ListItemText";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
+// import Cryptr from "cryptr";
 import Paper from "@material-ui/core/Paper";
-import socketIOClient from "socket.io-client";
 import classnames from "classnames";
 import commonUtilites from "../Utilities/common";
- 
+import { useGetMessages } from "../Services/chatService";
+
 import { authenticationService } from "../Services/authenticationService";
+import { socket } from "./Chat";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -75,30 +77,39 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "row-reverse",
   },
 }));
-
 const ChatBox = (props) => {
-  const [currentUserId] = useState(
-    authenticationService.currentUserValue.userId
-  );
+  const [currentUser] = useState(authenticationService.currentUserValue);
+  const getMessages = useGetMessages();
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [lastMessage, setLastMessage] = useState(null);
-
- 
-
+  // const cryptr = new Cryptr(process.env.REACT_APP_SECRET_KEY);
   let chatBottom = useRef(null);
   const classes = useStyles();
 
   useEffect(() => {
-    
-  }, [lastMessage, props.scope, props.conversationId]);
-
-  useEffect(() => {
-    
+    socket.on("chat_message", (data) => {
+      setLastMessage(data);
+    });
+    // return () => {
+    //   socket.removeListener("chat_message");
+    // };
   }, []);
+  useEffect(() => {
+    reloadMessages();
+    scrollToBottom();
+  }, [lastMessage, props.scope, props.user]);
 
   const reloadMessages = () => {
-     
+    if (props.scope !== null && props.user !== null) {
+      getMessages(props.user._id)
+        .then((res) => {
+          setMessages(res);
+        })
+        .catch((err) => console.log(err, "error"));
+    } else {
+      setMessages([]);
+    }
   };
 
   const scrollToBottom = () => {
@@ -109,7 +120,25 @@ const ChatBox = (props) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
- 
+    // const encryptedMsg = cryptr.encrypt(newMessage);
+    const encryptedMsg = window.btoa(encodeURIComponent(newMessage));
+
+    socket.emit(
+      "chat_message",
+      {
+        address: props.user.address,
+        encryptedMessage: encryptedMsg,
+        senderId: currentUser._id,
+      },
+      (response) => {
+        console.log(response, "responeh");
+      }
+    );
+    // socket.on("chat_message", (res) => {
+    //   console.log("chagmessage sok", res);
+    //   setLastMessage(res.message.encryptMessage);
+    // });
+    setNewMessage("");
   };
 
   return (
@@ -131,24 +160,31 @@ const ChatBox = (props) => {
                     key={m._id}
                     className={classnames(classes.listItem, {
                       [`${classes.listItemRight}`]:
-                        m.fromObj[0]._id === currentUserId,
+                        m.senderId._id === currentUser._id,
                     })}
                     alignItems="flex-start"
                   >
                     <ListItemAvatar className={classes.avatar}>
                       <Avatar>
-                        {commonUtilites.getInitialsFromName(m.fromObj[0].name)}
+                        {commonUtilites.getInitialsFromName(
+                          m.senderId.userName
+                        )}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       classes={{
                         root: classnames(classes.messageBubble, {
                           [`${classes.messageBubbleRight}`]:
-                            m.fromObj[0]._id === currentUserId,
+                            m.senderId._id === currentUser._id,
                         }),
                       }}
-                      primary={m.fromObj[0] && m.fromObj[0].name}
-                      secondary={<React.Fragment>{m.body}</React.Fragment>}
+                      primary={m.senderId && m.senderId.userName}
+                      secondary={
+                        <React.Fragment>
+                          {/* {cryptr.decrypt(m.encryptedMessage)} */}
+                          {decodeURIComponent(window.atob(m.encryptedMessage))}
+                        </React.Fragment>
+                      }
                     />
                   </ListItem>
                 ))}

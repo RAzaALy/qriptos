@@ -112,7 +112,6 @@ export function useLogin() {
     return instance
       .post("/api/user/wallet/login", { address, password })
       .then(({ data }) => {
-        console.log(data, "res");
         enqueueSnackbar(data.message, {
           variant: "success",
         });
