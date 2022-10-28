@@ -61,6 +61,10 @@ const Contacts = (props) => {
     getContacts()
       .then((res) => {
         setContacts(res);
+        if (res && res[0].chatWithUserId && res[0].chatWithUserId.userName) {
+          props.setUser(res[0].chatWithUserId);
+          props.setScope(res[0].chatWithUserId.userName);
+        }
         setData(res);
       })
       .catch((err) => console.log(err, "error"));

@@ -44,3 +44,66 @@ export function useGetMessages() {
   };
   return getMessages;
 }
+export function useDeleteMessage() {
+  const { enqueueSnackbar } = useSnackbar();
+
+  const deleteMessage = (messageId) => {
+    return instance
+      .post(`/api/chat/deleteMessage`, { messageId })
+      .then((res) => {
+        enqueueSnackbar(res.data.data, {
+          variant: "success",
+        });
+
+        return res.data;
+      })
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return deleteMessage;
+}
+export function useClearChat() {
+  const { enqueueSnackbar } = useSnackbar();
+
+  const clearChat = (userId) => {
+    return instance
+      .post(`/api/chat/clearChat`, { userId })
+      .then((res) => {
+        enqueueSnackbar(res.data.message, {
+          variant: "success",
+        });
+
+        return res.data;
+      })
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return clearChat;
+}
+export function useArchiveChat() {
+  const { enqueueSnackbar } = useSnackbar();
+
+  const archiveChat = (userId) => {
+    return instance
+      .post(`/api/chat/archiveChat`, { userId })
+      .then((res) => {
+        enqueueSnackbar(res.data.message, {
+          variant: "success",
+        });
+
+        return res.data;
+      })
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return archiveChat;
+}

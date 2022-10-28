@@ -39,7 +39,6 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      
       <SnackbarProvider maxSnack={3} autoHideDuration={3000}>
         <Router history={history}>
           <Route path="/" exact component={Welcome} />

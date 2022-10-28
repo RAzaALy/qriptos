@@ -6,22 +6,33 @@ import TextField from "@material-ui/core/TextField";
 import IconButton from "@material-ui/core/IconButton";
 import SendIcon from "@material-ui/icons/Send";
 import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemText from "@material-ui/core/ListItemText";
-import ListItemAvatar from "@material-ui/core/ListItemAvatar";
-import Avatar from "@material-ui/core/Avatar";
-// import Cryptr from "cryptr";
-import Paper from "@material-ui/core/Paper";
-import classnames from "classnames";
-import commonUtilites from "../Utilities/common";
-import { useGetMessages } from "../Services/chatService";
 
+import Button from "@material-ui/core/Button";
+import Dialog from "@material-ui/core/Dialog";
+import DialogActions from "@material-ui/core/DialogActions";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogTitle from "@material-ui/core/DialogTitle";
+// import Cryptr from "cryptr";
+import { Picker } from "emoji-mart";
+import "emoji-mart/css/emoji-mart.css";
+import Paper from "@material-ui/core/Paper";
+import Message from "./Message";
+import { useDeleteMessage, useGetMessages } from "../Services/chatService";
+import EmojiEmotionsIcon from "@material-ui/icons/EmojiEmotions";
 import { authenticationService } from "../Services/authenticationService";
 import { socket } from "./Chat";
 
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100%",
+    margin: 0,
+  },
+
+  closeButton: {
+    position: "absolute",
+    right: theme.spacing(1),
+    top: theme.spacing(1),
+    color: theme.palette.grey[500],
   },
   headerRow: {
     maxHeight: 60,
@@ -66,34 +77,40 @@ const useStyles = makeStyles((theme) => ({
   form: {
     width: "100%",
   },
-  avatar: {
-    margin: theme.spacing(1, 1.5),
-  },
-  listItem: {
-    display: "flex",
-    width: "100%",
-  },
-  listItemRight: {
-    flexDirection: "row-reverse",
-  },
+  
+
 }));
+
 const ChatBox = (props) => {
+  const [opened, setOpened] = useState(false);
+
+  const handleClickOpen = () => {
+    setOpened(true);
+  };
+  const handleClosed = () => {
+    setOpened(false);
+  };
   const [currentUser] = useState(authenticationService.currentUserValue);
   const getMessages = useGetMessages();
+  const deleteMessage = useDeleteMessage();
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [lastMessage, setLastMessage] = useState(null);
   // const cryptr = new Cryptr(process.env.REACT_APP_SECRET_KEY);
   let chatBottom = useRef(null);
   const classes = useStyles();
+  const deleteMsg = (id) => {
+    deleteMessage(id)
+      .then((res) => {
+        reloadMessages();
+      })
+      .catch((err) => console.log(err, "error"));
+  };
 
   useEffect(() => {
     socket.on("chat_message", (data) => {
       setLastMessage(data);
     });
-    // return () => {
-    //   socket.removeListener("chat_message");
-    // };
   }, []);
   useEffect(() => {
     reloadMessages();
@@ -134,94 +151,115 @@ const ChatBox = (props) => {
         console.log(response, "responeh");
       }
     );
-    // socket.on("chat_message", (res) => {
-    //   console.log("chagmessage sok", res);
-    //   setLastMessage(res.message.encryptMessage);
-    // });
+    socket.on("chat_message", (res) => {
+      setLastMessage(res.message.encryptMessage);
+    });
     setNewMessage("");
   };
 
   return (
-    <Grid container className={classes.root}>
-      <Grid item xs={12} className={classes.headerRow}>
-        <Paper className={classes.paper} square elevation={2}>
-          <Typography color="inherit" variant="h6">
-            {props.scope}
-          </Typography>
-        </Paper>
-      </Grid>
-      <Grid item xs={12}>
-        <Grid container className={classes.messageContainer}>
-          <Grid item xs={12} className={classes.messagesRow}>
-            {messages && (
-              <List>
-                {messages.map((m) => (
-                  <ListItem
-                    key={m._id}
-                    className={classnames(classes.listItem, {
-                      [`${classes.listItemRight}`]:
-                        m.senderId._id === currentUser._id,
-                    })}
-                    alignItems="flex-start"
-                  >
-                    <ListItemAvatar className={classes.avatar}>
-                      <Avatar>
-                        {commonUtilites.getInitialsFromName(
-                          m.senderId.userName
-                        )}
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      classes={{
-                        root: classnames(classes.messageBubble, {
-                          [`${classes.messageBubbleRight}`]:
-                            m.senderId._id === currentUser._id,
-                        }),
-                      }}
-                      primary={m.senderId && m.senderId.userName}
-                      secondary={
-                        <React.Fragment>
-                          {/* {cryptr.decrypt(m.encryptedMessage)} */}
-                          {decodeURIComponent(window.atob(m.encryptedMessage))}
-                        </React.Fragment>
-                      }
+    <>
+      <div>
+        <Dialog
+          open={opened}
+          onClose={handleClosed}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">{"Pick Emoji"}</DialogTitle>
+          <DialogContent>
+            <Picker
+              showPreview={false}
+              emoji="point_up"
+              emojiSize={30}
+              showEmojis={true}
+              emojiTooltip={true}
+              className={styles.emojiPicker}
+              title="WeChat"
+              onSelect={(emoji) => setNewMessage(newMessage + emoji.native)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClosed} color="primary">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </div>
+
+      <Grid container className={classes.root}>
+        <Grid item xs={12} className={classes.headerRow}>
+          <Paper className={classes.paper} square elevation={2}>
+            <Typography color="inherit" variant="h6">
+              {props.scope}
+            </Typography>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Grid container className={classes.messageContainer}>
+            <Grid item xs={12} className={classes.messagesRow}>
+              {messages && (
+                <List>
+                  {messages.map((m) => (
+                    <Message
+                      message={m}
+                      user={props.user}
+                      scope={props.user}
+                      key={m._id}
+                      onDelete={deleteMsg}
                     />
-                  </ListItem>
-                ))}
-              </List>
-            )}
-            <div ref={chatBottom} />
-          </Grid>
-          <Grid item xs={12} className={classes.inputRow}>
-            <form onSubmit={handleSubmit} className={classes.form}>
-              <Grid
-                container
-                className={classes.newMessageRow}
-                alignItems="flex-end"
-              >
-                <Grid item xs={11}>
-                  <TextField
-                    id="message"
-                    label="Message"
-                    variant="outlined"
-                    margin="dense"
-                    fullWidth
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                  />
+                  ))}
+                </List>
+              )}
+              <div ref={chatBottom} />
+            </Grid>
+            <Grid item xs={12} className={classes.inputRow}>
+              <form onSubmit={handleSubmit} className={classes.form}>
+                <Grid
+                  container
+                  className={classes.newMessageRow}
+                  alignItems="flex-end"
+                >
+                  <Grid item xs={10}>
+                    <TextField
+                      id="message"
+                      label="Message"
+                      variant="outlined"
+                      margin="dense"
+                      fullWidth
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                    />
+                  </Grid>
+
+                  <Grid item xs={2}>
+                    <IconButton type="submit">
+                      <SendIcon />
+                    </IconButton>
+                    <IconButton type="button" onClick={handleClickOpen}>
+                      <EmojiEmotionsIcon />
+                    </IconButton>
+                  </Grid>
                 </Grid>
-                <Grid item xs={1}>
-                  <IconButton type="submit">
-                    <SendIcon />
-                  </IconButton>
-                </Grid>
-              </Grid>
-            </form>
+              </form>
+            </Grid>
           </Grid>
         </Grid>
       </Grid>
-    </Grid>
+    </>
   );
 };
 
 export default ChatBox;
+const styles = {
+  emojiPicker: {
+    cursor: "pointer",
+    zIndex: 333,
+    position: "fixed",
+    bottom: "3.5%",
+    right: "4%",
+    border: "none",
+    margin: 0,
+  },
+};

@@ -55,7 +55,7 @@ const Chat = () => {
       setUser(res);
     });
 
-    return () => socket.close();
+    // return () => socket.close();
   }, []);
   return (
     <React.Fragment>

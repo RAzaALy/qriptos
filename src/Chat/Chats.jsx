@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
 import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemText from "@material-ui/core/ListItemText";
-import ListItemAvatar from "@material-ui/core/ListItemAvatar";
-import Avatar from "@material-ui/core/Avatar";
 import { makeStyles } from "@material-ui/core/styles";
 import IconButton from "@material-ui/core/IconButton";
 import TextField from "@material-ui/core/TextField";
@@ -12,13 +8,12 @@ import AddIcon from "@material-ui/icons/Add";
 import PersonIcon from "@material-ui/icons/Person";
 import GroupIcon from "@material-ui/icons/Group";
 import Menu from "@material-ui/core/Menu";
+import { useClearChat, useArchiveChat } from "../Services/chatService";
 import MenuItem from "@material-ui/core/MenuItem";
 import { useGetChats } from "../Services/chatService";
 import { Fragment } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import commonUtilites from "../Utilities/common";
-// import Cryptr from "cryptr";
-import { authenticationService } from "../Services/authenticationService";
+import Chat from "../components/Chat";
 import { socket } from "./Chat";
 const useStyles = makeStyles((theme) => ({
   subheader: {
@@ -49,35 +44,57 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "center",
     cursor: "pointer",
   },
+  listItem: {
+    display: "flex",
+    width: "255%",
+  },
+  parent: {
+    display: "flex",
+    justifyContent: "space-between",
+  },
 }));
+
 const Chats = (props) => {
-  // const cryptr = new Cryptr(process.env.REACT_APP_SECRET_KEY);
   const classes = useStyles();
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
   const [profileMenu, setProfileMenu] = useState(null);
   const [chats, setChats] = useState([]);
   const [newChats, setNewChats] = useState(null);
-
+  const clearChat = useClearChat();
+  const archiveChat = useArchiveChat();
   const getChats = useGetChats();
 
-  useEffect(() => {
+  const deleteChat = (id) => {
+    clearChat(id)
+      .then((res) => {
+        reloadChats();
+      })
+      .catch((err) => console.log(err, "error"));
+  };
+  const archiveCht = (id) => {
+    archiveChat(id)
+      .then((res) => {
+        reloadChats();
+      })
+      .catch((err) => console.log(err, "error"));
+  };
+  const reloadChats = () => {
     getChats()
       .then((res) => {
         setChats(res);
         setData(res);
       })
       .catch((err) => console.log(err, "error"));
+  };
+  useEffect(() => {
+    reloadChats();
   }, [newChats]);
 
   useEffect(() => {
     socket.on("chat_message", (data) => {
       setNewChats(data);
     });
-
-    return () => {
-      socket.removeListener("chat_message");
-    };
   }, []);
 
   const handleChange = (e) => {
@@ -94,22 +111,6 @@ const Chats = (props) => {
     }
 
     setSearch(keyword);
-  };
-
-  // Returns the recipient name that does not
-  // belong to the current user.
-  const handleRecipient = (data) => {
-    const recipients = [data.recieverId[0], data.senderId];
-
-    for (let i = 0; i < recipients.length; i++) {
-      if (
-        recipients[i].userName !==
-        authenticationService.currentUserValue.userName
-      ) {
-        return recipients[i];
-      }
-    }
-    return null;
   };
 
   return (
@@ -161,33 +162,14 @@ const Chats = (props) => {
         {chats && (
           <React.Fragment>
             {chats.map((c) => (
-              <ListItem
-                className={classes.listItem}
+              <Chat
                 key={c._id}
-                button
-                onClick={() => {
-                  props.setUser(handleRecipient(c));
-                  props.setScope(handleRecipient(c).userName);
-                }}
-              >
-                <ListItemAvatar>
-                  <Avatar>
-                    {commonUtilites.getInitialsFromName(
-                      handleRecipient(c).userName
-                    )}
-                  </Avatar>
-                </ListItemAvatar>
-
-                <ListItemText
-                  primary={handleRecipient(c).userName}
-                  secondary={
-                    <React.Fragment>
-                      {/* {cryptr.decrypt(c.encryptedMessage)} */}
-                      {decodeURIComponent(window.atob(c.encryptedMessage))}
-                    </React.Fragment>
-                  }
-                />
-              </ListItem>
+                chat={c}
+                user={props.setUser}
+                scope={props.setScope}
+                onDelete={deleteChat}
+                onArchive={archiveCht}
+              />
             ))}
           </React.Fragment>
         )}
