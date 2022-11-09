@@ -6,28 +6,40 @@ import TextField from "@material-ui/core/TextField";
 import IconButton from "@material-ui/core/IconButton";
 import SendIcon from "@material-ui/icons/Send";
 import List from "@material-ui/core/List";
-
 import Button from "@material-ui/core/Button";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
-// import Cryptr from "cryptr";
+import GroupIcon from "@material-ui/icons/Group";
+import MenuOpenIcon from "@material-ui/icons/MenuOpen";
+import GroupAddIcon from "@material-ui/icons/GroupAdd";
+import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import { Picker } from "emoji-mart";
 import "emoji-mart/css/emoji-mart.css";
+import ImageIcon from "@material-ui/icons/Image";
 import Paper from "@material-ui/core/Paper";
 import Message from "./Message";
-import { useDeleteMessage, useGetMessages } from "../Services/chatService";
+import DialogBox from "../components/DialogBox";
+import AddGroupMembers from "../components/AddGroupMembers";
+import GroupInfo from "../components/GroupInfo";
+import {
+  useDeleteMessage,
+  useGetMessages,
+  useGetGroupMessages,
+  useUploadImage,
+} from "../Services/chatService";
 import EmojiEmotionsIcon from "@material-ui/icons/EmojiEmotions";
 import { authenticationService } from "../Services/authenticationService";
 import { socket } from "./Chat";
-
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100%",
     margin: 0,
   },
-
+  input: {
+    display: "none",
+  },
   closeButton: {
     position: "absolute",
     right: theme.spacing(1),
@@ -77,13 +89,29 @@ const useStyles = makeStyles((theme) => ({
   form: {
     width: "100%",
   },
-  
-
+  uploadImg: {
+    margin: "2rem",
+    width: "15rem",
+    height: "10rem",
+  },
 }));
 
 const ChatBox = (props) => {
   const [opened, setOpened] = useState(false);
+  const [file, setFile] = useState(null);
+  const [addModal, setAddModal] = useState(false);
 
+  const handleImage = (e) => {
+    const img = e.target.files[0];
+
+    try {
+      uploadImage(img)
+        .then((res) => {
+          setFile(img);
+        })
+        .catch((err) => console.log(err, "error"));
+    } catch (err) {}
+  };
   const handleClickOpen = () => {
     setOpened(true);
   };
@@ -92,11 +120,15 @@ const ChatBox = (props) => {
   };
   const [currentUser] = useState(authenticationService.currentUserValue);
   const getMessages = useGetMessages();
+  const getGroupMessages = useGetGroupMessages();
   const deleteMessage = useDeleteMessage();
+  const uploadImage = useUploadImage();
+  const [infoModal, setInfoModal] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
+
   const [lastMessage, setLastMessage] = useState(null);
-  // const cryptr = new Cryptr(process.env.REACT_APP_SECRET_KEY);
+
   let chatBottom = useRef(null);
   const classes = useStyles();
   const deleteMsg = (id) => {
@@ -111,6 +143,9 @@ const ChatBox = (props) => {
     socket.on("chat_message", (data) => {
       setLastMessage(data);
     });
+    socket.on("group_chat_message", (res) => {
+      setLastMessage(res.encryptedMessage);
+    });
   }, []);
   useEffect(() => {
     reloadMessages();
@@ -119,11 +154,24 @@ const ChatBox = (props) => {
 
   const reloadMessages = () => {
     if (props.scope !== null && props.user !== null) {
-      getMessages(props.user._id)
-        .then((res) => {
-          setMessages(res);
-        })
-        .catch((err) => console.log(err, "error"));
+      props.user.chatConstantId !== undefined
+        ? getGroupMessages(props.user.chatConstantId.chatRoom._id)
+            .then((res) => {
+                    // if (
+              //   props.user.chatConstantId.chatRoom.createdByUser ===
+              //   currentUser._id
+              // ) {
+              //   res.shift();
+              // }
+
+              setMessages(res);
+            })
+            .catch((err) => console.log(err, "error"))
+        : getMessages(props.user._id)
+            .then((res) => {
+              setMessages(res);
+            })
+            .catch((err) => console.log(err, "error"));
     } else {
       setMessages([]);
     }
@@ -137,26 +185,42 @@ const ChatBox = (props) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // const encryptedMsg = cryptr.encrypt(newMessage);
     const encryptedMsg = window.btoa(encodeURIComponent(newMessage));
 
-    socket.emit(
-      "chat_message",
-      {
-        address: props.user.address,
-        encryptedMessage: encryptedMsg,
-        senderId: currentUser._id,
-      },
-      (response) => {
-        console.log(response, "responeh");
-      }
-    );
-    socket.on("chat_message", (res) => {
-      setLastMessage(res.message.encryptMessage);
-    });
+    if (props.group.type) {
+      socket.emit(
+        "group_chat_message",
+        {
+          chatRoom: props.group.chatRoom._id,
+          encryptedMessage: encryptedMsg,
+          senderId: currentUser._id,
+        },
+        (response) => {
+          console.log(response, "responeh");
+        }
+      );
+      socket.on("group_chat_message", (res) => {
+        setLastMessage(res.encryptedMessage);
+      });
+    } else {
+      socket.emit(
+        "chat_message",
+        {
+          address: props.user.address,
+          encryptedMessage: encryptedMsg,
+          senderId: currentUser._id,
+        },
+        (response) => {
+          console.log(response, "responeh");
+        }
+      );
+      socket.on("chat_message", (res) => {
+        setLastMessage(res.message.encryptMessage);
+      });
+    }
+
     setNewMessage("");
   };
-
   return (
     <>
       <div>
@@ -190,9 +254,63 @@ const ChatBox = (props) => {
       <Grid container className={classes.root}>
         <Grid item xs={12} className={classes.headerRow}>
           <Paper className={classes.paper} square elevation={2}>
-            <Typography color="inherit" variant="h6">
-              {props.scope}
-            </Typography>
+            <div className={classes.rightHeaderBtns}>
+              {props.group.chatRoom &&
+                props.group.chatRoom.createdByUser === currentUser._id && (
+                  <DialogBox
+                    modalOpen={addModal}
+                    setModalOpen={setAddModal}
+                    title="Add Members"
+                    triggerButton={
+                      <IconButton
+                        color="primary"
+                        onClick={() => setAddModal(true)}
+                        size="small"
+                        style={{ marginRight: 10 }}
+                      >
+                        <GroupAddIcon fontSize={"medium"} />
+                      </IconButton>
+                    }
+                  >
+                    <AddGroupMembers
+                      members={props.group.chatRoom.memberId}
+                      groupId={props.group.chatRoom._id}
+                      closeModal={() => setAddModal(false)}
+                    />
+                  </DialogBox>
+                )}
+              {props.group.type && (
+                <DialogBox
+                  modalOpen={infoModal}
+                  setModalOpen={setInfoModal}
+                  title="Group Info"
+                  triggerButton={
+                    <IconButton
+                      color="primary"
+                      onClick={() => setInfoModal(true)}
+                      size="small"
+                    >
+                      <MenuOpenIcon fontSize={"medium"} />
+                    </IconButton>
+                  }
+                >
+                  <GroupInfo
+                    userData={props.user}
+                    closeModal={() => setInfoModal(false)}
+                  />
+                </DialogBox>
+              )}
+            </div>
+            <Typography>{props.scope}</Typography>
+            {props.group.type && (
+              <Typography>
+                ({props.group.chatRoom.memberId.length}{" "}
+                {props.group.chatRoom.memberId.length > 1
+                  ? "members"
+                  : "member"}
+                )
+              </Typography>
+            )}
           </Paper>
         </Grid>
 
@@ -212,6 +330,11 @@ const ChatBox = (props) => {
                   ))}
                 </List>
               )}
+              <img
+                className={file ? classes.uploadImg : ""}
+                src={file ? URL.createObjectURL(file) : null}
+                alt=""
+              />
               <div ref={chatBottom} />
             </Grid>
             <Grid item xs={12} className={classes.inputRow}>
@@ -240,6 +363,22 @@ const ChatBox = (props) => {
                     <IconButton type="button" onClick={handleClickOpen}>
                       <EmojiEmotionsIcon />
                     </IconButton>
+                    <input
+                      onChange={handleImage}
+                      accept="image/*"
+                      className={classes.input}
+                      id="icon-button-file"
+                      type="file"
+                    />
+                    <label htmlFor="icon-button-file">
+                      <IconButton
+                        color="primary"
+                        className={classes.button}
+                        component="span"
+                      >
+                        <ImageIcon />
+                      </IconButton>
+                    </label>
                   </Grid>
                 </Grid>
               </form>

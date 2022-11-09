@@ -61,13 +61,14 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: "row-reverse",
   },
 }));
-const options = ["Delete", "Archive", "Edit"];
+const options = ["Delete", "Sealed", "Edit"];
 
 const ITEM_HEIGHT = 48;
-const Message = ({ message, onDelete }) => {
+const Message = ({ message, onDelete, image }) => {
   const [currentUser] = useState(authenticationService.currentUserValue);
   const classes = useStyles();
   const [id, setId] = useState("");
+  const [sealed, setSealed] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
@@ -79,73 +80,86 @@ const Message = ({ message, onDelete }) => {
   const handleClose = (option) => {
     if (option === "Delete") {
       onDelete(id);
+    } else if (option === "Sealed") {
+      setSealed(true);
+      options[1] = "UnSealed";
+    } else if (option === "UnSealed") {
+      setSealed(false);
+      options[1] = "Sealed";
     }
 
     setAnchorEl(null);
   };
 
   return (
-    <ListItem
-      key={message._id}
-      className={classnames(classes.listItem, {
-        [`${classes.listItemRight}`]: message.senderId._id === currentUser._id,
-      })}
-      alignItems="flex-start"
-    >
-      <ListItemAvatar className={classes.avatar}>
-        <Avatar>
-          {commonUtilites.getInitialsFromName(message.senderId.userName)}
-        </Avatar>
-      </ListItemAvatar>
-      <div>
-        <Menu
-          id="long-menu"
-          anchorEl={anchorEl}
-          keepMounted
-          open={open}
-          onClose={handleClose}
-          PaperProps={{
-            style: {
-              maxHeight: ITEM_HEIGHT * 4.5,
-              width: "20ch",
-            },
-          }}
-        >
-          {options.map((option) => (
-            <MenuItem
-              key={option}
-              selected={option === 'Delete'}
-              onClick={() => handleClose(option)}
-            >
-              {option}
-            </MenuItem>
-          ))}
-        </Menu>
-      </div>
-      <IconButton
-        aria-label="more"
-        aria-controls="long-menu"
-        aria-haspopup="true"
-        onClick={(e) => handleClick(e, message._id)}
+    <>
+      <ListItem
+        key={message._id}
+        className={classnames(classes.listItem, {
+          [`${classes.listItemRight}`]:
+            message.senderId._id === currentUser._id,
+        })}
+        alignItems="flex-start"
       >
-        <MoreVertIcon />
-      </IconButton>
-      <ListItemText
-        classes={{
-          root: classnames(classes.messageBubble, {
-            [`${classes.messageBubbleRight}`]:
-              message.senderId._id === currentUser._id,
-          }),
-        }}
-        primary={message.senderId && message.senderId.userName}
-        secondary={
-          <React.Fragment>
-            {/* {cryptr.decrypt(m.encryptedMessage)} */}
-            {decodeURIComponent(window.atob(message.encryptedMessage))}
-          </React.Fragment>
-        }
-      />
-    </ListItem>
+        <ListItemAvatar className={classes.avatar}>
+          <Avatar
+            alt={commonUtilites.getInitialsFromName(message.senderId.userName)}
+            src={`https://secure.gravatar.com/avatar/${message.senderId._id}?s=150&d=retro`}
+          />
+          {/* {commonUtilites.getInitialsFromName(message.senderId.userName)}
+        </Avatar> */}
+        </ListItemAvatar>
+        <div>
+          <Menu
+            id="long-menu"
+            anchorEl={anchorEl}
+            keepMounted
+            open={open}
+            onClose={handleClose}
+            PaperProps={{
+              style: {
+                maxHeight: ITEM_HEIGHT * 4.5,
+                width: "20ch",
+              },
+            }}
+          >
+            {options.map((option) => (
+              <MenuItem
+                key={option}
+                selected={option === "Delete"}
+                onClick={() => handleClose(option)}
+              >
+                {option}
+              </MenuItem>
+            ))}
+          </Menu>
+        </div>
+        <IconButton
+          aria-label="more"
+          aria-controls="long-menu"
+          aria-haspopup="true"
+          onClick={(e) => handleClick(e, message._id)}
+        >
+          <MoreVertIcon />
+        </IconButton>
+        <ListItemText
+          classes={{
+            root: classnames(classes.messageBubble, {
+              [`${classes.messageBubbleRight}`]:
+                message.senderId._id === currentUser._id,
+            }),
+          }}
+          primary={message.senderId && message.senderId.userName}
+          secondary={
+            <React.Fragment>
+              {sealed
+                ? message.encryptedMessage
+                : decodeURIComponent(window.atob(message.encryptedMessage))}
+            </React.Fragment>
+          }
+        />
+      </ListItem>
+    </>
   );
 };
 

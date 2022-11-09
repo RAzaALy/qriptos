@@ -51,22 +51,38 @@ const useStyles = makeStyles((theme) => ({
 }));
 const options = ["Delete", "Archive", "Edit"];
 const ITEM_HEIGHT = 48;
-const Chat = ({ chat, user, scope, onDelete, onArchive }) => {
-  const [id, setId] = useState("");
+const Chat = ({ chat, user, group, scope, onDelete, onArchive }) => {
+  const [currentUser] = useState(authenticationService.currentUserValue);
+  const [id, setId] = useState({
+    deleteId: { type: "", id: null },
+    archieveId: null,
+    deleteGroupId: { type: "", id: null },
+  });
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
   const classes = useStyles();
-  const handleClick = (event, id) => {
+  const handleClick = (event, chat) => {
     setAnchorEl(event.currentTarget);
-    setId(id);
+    const deleteId = { type: "msg", id: id.deleteId.id };
+    const deleteGroupId = {
+      type: "group",
+      id: chat.chatConstantId.chatRoom
+        ? chat.chatConstantId.chatRoom._id
+        : null,
+    };
+    const archieveId = chat.chatConstantId._id;
+    setId({ deleteId, archieveId, deleteGroupId });
   };
 
   const handleClose = (option) => {
     if (option === "Delete") {
-      onDelete(id);
-    } else if (option === "Archive") {
-      onArchive(id);
+      onDelete(id.deleteId.id !== null ? id.deleteId : id.deleteGroupId);
+    } else if (option === "Archive" || option === "UnArchive") {
+      options[1] === "Archive"
+        ? (options[1] = "UnArchive")
+        : (options[1] = "Archive");
+      onArchive(id.archieveId);
     }
 
     setAnchorEl(null);
@@ -81,6 +97,8 @@ const Chat = ({ chat, user, scope, onDelete, onArchive }) => {
         recipients[i].userName !==
         authenticationService.currentUserValue.userName
       ) {
+        id.deleteId.id = recipients[i]._id;
+         
         return recipients[i];
       }
     }
@@ -94,20 +112,41 @@ const Chat = ({ chat, user, scope, onDelete, onArchive }) => {
           key={chat._id}
           button
           onClick={() => {
-            user(handleRecipient(chat));
-            scope(handleRecipient(chat).userName);
+            user(chat.chatConstantId.chatRoom ? chat : handleRecipient(chat));
+            group({
+              type: chat.chatConstantId.chatRoom ? true : false,
+              chatRoom: chat.chatConstantId.chatRoom,
+            });
+            scope(
+              chat.chatConstantId.chatRoom
+                ? chat.chatConstantId.chatRoom.groupName
+                : handleRecipient(chat).userName
+            );
           }}
         >
           <ListItemAvatar>
-            <Avatar>
-              {commonUtilites.getInitialsFromName(
-                handleRecipient(chat).userName
+            <Avatar
+              alt={commonUtilites.getInitialsFromName(
+                chat.chatConstantId.chatRoom
+                  ? chat.chatConstantId.chatRoom.groupName
+                  : handleRecipient(chat).userName
               )}
-            </Avatar>
+              src={`https://secure.gravatar.com/avatar/${chat.chatConstantId.chatRoom ? chat.chatConstantId.chatRoom._id : handleRecipient(chat)._id}?s=150&d=retro`}
+            />
+            {/* {commonUtilites.getInitialsFromName(
+                chat.chatConstantId.chatRoom
+                  ? chat.chatConstantId.chatRoom.groupName
+                  : handleRecipient(chat).userName
+              )}
+            </Avatar> */}
           </ListItemAvatar>
 
           <ListItemText
-            primary={handleRecipient(chat).userName}
+            primary={
+              chat.chatConstantId.chatRoom
+                ? chat.chatConstantId.chatRoom.groupName
+                : handleRecipient(chat).userName
+            }
             secondary={
               <React.Fragment>
                 {/* {cryptr.decrypt(c.encryptedMessage)} */}
@@ -145,7 +184,7 @@ const Chat = ({ chat, user, scope, onDelete, onArchive }) => {
           aria-label="more"
           aria-controls="long-menu"
           aria-haspopup="true"
-          onClick={(e) => handleClick(e, chat._id)}
+          onClick={(e) => handleClick(e, chat)}
         >
           <MoreVertIcon />
         </IconButton>

@@ -8,7 +8,11 @@ import AddIcon from "@material-ui/icons/Add";
 import PersonIcon from "@material-ui/icons/Person";
 import GroupIcon from "@material-ui/icons/Group";
 import Menu from "@material-ui/core/Menu";
-import { useClearChat, useArchiveChat } from "../Services/chatService";
+import {
+  useClearChat,
+  useArchiveChat,
+  useClearGroupChat,
+} from "../Services/chatService";
 import MenuItem from "@material-ui/core/MenuItem";
 import { useGetChats } from "../Services/chatService";
 import { Fragment } from "react";
@@ -61,16 +65,24 @@ const Chats = (props) => {
   const [profileMenu, setProfileMenu] = useState(null);
   const [chats, setChats] = useState([]);
   const [newChats, setNewChats] = useState(null);
+  const [newGroupChats, setNewGroupChats] = useState(null);
   const clearChat = useClearChat();
+  const clearGroupChat = useClearGroupChat();
   const archiveChat = useArchiveChat();
   const getChats = useGetChats();
 
-  const deleteChat = (id) => {
-    clearChat(id)
-      .then((res) => {
-        reloadChats();
-      })
-      .catch((err) => console.log(err, "error"));
+  const deleteChat = (obj) => {
+    obj.type === "msg"
+      ? clearChat(obj.id)
+          .then((res) => {
+            reloadChats();
+          })
+          .catch((err) => console.log(err, "error"))
+      : clearGroupChat(obj.id)
+          .then((res) => {
+            reloadChats();
+          })
+          .catch((err) => console.log(err, "error"));
   };
   const archiveCht = (id) => {
     archiveChat(id)
@@ -89,11 +101,14 @@ const Chats = (props) => {
   };
   useEffect(() => {
     reloadChats();
-  }, [newChats]);
+  }, [newChats, newGroupChats]);
 
   useEffect(() => {
     socket.on("chat_message", (data) => {
       setNewChats(data);
+    });
+    socket.on("group_chat_message", (data) => {
+      setNewGroupChats(data);
     });
   }, []);
 
@@ -101,9 +116,15 @@ const Chats = (props) => {
     const keyword = e.target.value;
     if (keyword !== "") {
       const results = chats.filter((user) => {
-        return user.recieverId[0].userName
-          .toLowerCase()
-          .startsWith(keyword.toLowerCase());
+        const name =
+          user.chatConstantId.chatRoom !== null
+            ? user.chatConstantId.chatRoom.groupName
+                .toLowerCase()
+                .startsWith(keyword.toLowerCase())
+            : user.recieverId[0].userName
+                .toLowerCase()
+                .startsWith(keyword.toLowerCase());
+        return name;
       });
       setChats(results);
     } else {
@@ -153,7 +174,11 @@ const Chats = (props) => {
           >
             <PersonIcon /> Start New Chat
           </MenuItem>
-          <MenuItem onClick={() => setProfileMenu(null)}>
+          <MenuItem
+            component={RouterLink}
+            onClick={() => setProfileMenu(null)}
+            to="/newGroupChat"
+          >
             <GroupIcon /> Start Group Chat
           </MenuItem>
         </Menu>
@@ -167,6 +192,7 @@ const Chats = (props) => {
                 chat={c}
                 user={props.setUser}
                 scope={props.setScope}
+                group={props.setGroup}
                 onDelete={deleteChat}
                 onArchive={archiveCht}
               />

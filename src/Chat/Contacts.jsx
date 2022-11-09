@@ -11,7 +11,6 @@ import PersonIcon from "@material-ui/icons/Person";
 import GroupIcon from "@material-ui/icons/Group";
 import { makeStyles } from "@material-ui/core/styles";
 import AddIcon from "@material-ui/icons/Add";
-import { useGetChats } from "../Services/chatService";
 import commonUtilites from "../Utilities/common";
 import Menu from "@material-ui/core/Menu";
 import MenuItem from "@material-ui/core/MenuItem";
@@ -63,6 +62,9 @@ const Contacts = (props) => {
         setContacts(res);
         if (res && res[0].chatWithUserId && res[0].chatWithUserId.userName) {
           props.setUser(res[0].chatWithUserId);
+          props.setGroup({
+            type: false,
+          });
           props.setScope(res[0].chatWithUserId.userName);
         }
         setData(res);
@@ -90,6 +92,9 @@ const Contacts = (props) => {
     await getProfile(key)
       .then((res) => {
         props.setUser(res);
+        props.setGroup({
+          type: false,
+        });
         props.setScope(res.userName);
         setProfile(res._id);
       })
@@ -152,11 +157,14 @@ const Contacts = (props) => {
                 button
               >
                 <ListItemAvatar className={classes.avatar}>
-                  <Avatar>
-                    {commonUtilites.getInitialsFromName(
+                  <Avatar
+                    alt={u.chatWithUserId.userName}
+                    src={`https://secure.gravatar.com/avatar/${u.chatWithUserId._id}?s=150&d=retro`}
+                  />
+                  {/* {commonUtilites.getInitialsFromName(
                       u.chatWithUserId.userName
                     )}
-                  </Avatar>
+                  </Avatar> */}
                 </ListItemAvatar>
                 <ListItemText
                   primary={u.chatWithUserId.userName}

@@ -37,6 +37,7 @@ const useStyles = makeStyles((theme) => ({
 const Chat = () => {
   const [address] = useState(authenticationService.currentUserValue.address);
   const [scope, setScope] = useState("Chat");
+  const [group, setGroup] = useState({ type: null, chatRoom: null });
   const [tab, setTab] = useState(0);
   const [user, setUser] = useState(null);
 
@@ -54,8 +55,6 @@ const Chat = () => {
       localStorage.setItem("currentUser", JSON.stringify(res));
       setUser(res);
     });
-
-    // return () => socket.close();
   }, []);
   return (
     <React.Fragment>
@@ -75,12 +74,24 @@ const Chat = () => {
                 <Tab label="Contacts" />
               </Tabs>
             </Paper>
-            {tab === 0 && <Chats setUser={setUser} setScope={setScope} />}
-            {tab === 1 && <Contacts setUser={setUser} setScope={setScope} />}
+            {tab === 0 && (
+              <Chats
+                setUser={setUser}
+                setScope={setScope}
+                setGroup={setGroup}
+              />
+            )}
+            {tab === 1 && (
+              <Contacts
+                setUser={setUser}
+                setScope={setScope}
+                setGroup={setGroup}
+              />
+            )}
           </Paper>
         </Grid>
         <Grid item md={8}>
-          <ChatBox scope={scope} user={user} />
+          <ChatBox scope={scope} user={user} group={group} />
         </Grid>
       </Grid>
     </React.Fragment>

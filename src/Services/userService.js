@@ -1,26 +1,6 @@
 import { useSnackbar } from "notistack";
 import { instance } from "../Utilities/instance";
 
-export function useNewChat() {
-  const { enqueueSnackbar } = useSnackbar();
-  const newChat = (key) => {
-    return instance
-      .post("/api/user/addContact", { address: key })
-      .then(({ data }) => {
-        enqueueSnackbar(data.message, {
-          variant: "success",
-        });
-
-        return data.data;
-      })
-      .catch(function (err) {
-        enqueueSnackbar(err.message, {
-          variant: "error",
-        });
-      });
-  };
-  return newChat;
-}
 export function useViewContact() {
   const { enqueueSnackbar } = useSnackbar();
   const viewContact = () => {

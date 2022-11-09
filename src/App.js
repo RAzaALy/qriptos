@@ -13,6 +13,7 @@ import Chat from "./Chat/Chat";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import NewChat from "./pages/NewChat";
+import NewGroupChat from "./pages/NewGroupChat";
 const theme = createTheme({
   palette: {
     primary: {
@@ -48,6 +49,7 @@ function App() {
           <PrivateRoute path="/chat" component={Chat} />
           <PrivateRoute path="/profile" component={Profile} />
           <PrivateRoute path="/newChat" component={NewChat} /> 
+          <PrivateRoute path="/newGroupChat" component={NewGroupChat} /> 
         </Router>
       </SnackbarProvider>
     </ThemeProvider>
