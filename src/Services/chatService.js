@@ -221,7 +221,6 @@ export function useAddGroupMember() {
   const { enqueueSnackbar } = useSnackbar();
 
   const addGroupMember = ({ groupId, memberId }) => {
-    
     return instance
       .post(`/api/chat/addMember`, { groupId, memberId })
       .then(({ data }) => {
@@ -243,7 +242,6 @@ export function useRemoveGroupMember() {
   const { enqueueSnackbar } = useSnackbar();
 
   const removeGroupMember = ({ groupId, memberId }) => {
-    
     return instance
       .post(`/api/chat/removeMember`, { groupId, memberId })
       .then(({ data }) => {
@@ -260,4 +258,67 @@ export function useRemoveGroupMember() {
       });
   };
   return removeGroupMember;
+}
+export function useLeaveGroupMember() {
+  const { enqueueSnackbar } = useSnackbar();
+
+  const leaveGroupMember = ({ chatRoomId }) => {
+    return instance
+      .post(`/api/chat/leaveGroup`, { chatRoomId })
+      .then(({ data }) => {
+        enqueueSnackbar(data.message, {
+          variant: "success",
+        });
+
+        return data;
+      })
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return leaveGroupMember;
+}
+export function useMakeAdmin() {
+  const { enqueueSnackbar } = useSnackbar();
+
+  const makeAdmin = ({ groupId, memberId }) => {
+    return instance
+      .post(`/api/chat/makeAdmin`, { groupId, memberId })
+      .then(({ data }) => {
+        enqueueSnackbar(data.message, {
+          variant: "success",
+        });
+
+        return data;
+      })
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return makeAdmin;
+}
+export function useGroupInfo() {
+  const { enqueueSnackbar } = useSnackbar();
+
+  const groupInfo = (id) => {
+    return instance
+      .get(`/api/chat/getGroupInfo/${id}`)
+      .then(({ data }) => {
+        enqueueSnackbar(data.message, {
+          variant: "success",
+        });
+
+        return data.data;
+      })
+      .catch((err) => {
+        enqueueSnackbar(err.message, {
+          variant: "error",
+        });
+      });
+  };
+  return groupInfo;
 }

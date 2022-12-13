@@ -10,6 +10,7 @@ import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
 import ArrowDropUpIcon from "@material-ui/icons/ArrowDropUp";
 import Typography from "@material-ui/core/Typography";
 import { authenticationService } from "../Services/authenticationService";
+
 import history from "../Utilities/history";
 
 const useStyles = makeStyles((theme) => ({
@@ -32,6 +33,7 @@ const useStyles = makeStyles((theme) => ({
 const Header = () => {
   const [currentUser] = useState(authenticationService.currentUserValue);
   const [anchorEl, setAnchorEl] = useState(null);
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleDropClose = () => {
@@ -61,7 +63,7 @@ const Header = () => {
     <div className={classes.root}>
       <AppBar position="static">
         <Toolbar>
-          <Link href="/chat"  className={classes.title}>
+          <Link href="/chat" className={classes.title}>
             {/* <img src={logo} alt="Logo" /> */}
             <Typography color="secondary" variant="h5">
               Qriptos
@@ -92,12 +94,15 @@ const Header = () => {
               horizontal: "right",
             }}
           >
-            <MenuItem onClick={() => history.push("/profile")}>Profile</MenuItem>
+            <MenuItem onClick={() => history.push("/profile")}>
+              Profile
+            </MenuItem>
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
     </div>
-  );};
+  );
+};
 
 export default Header;

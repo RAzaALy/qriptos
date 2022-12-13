@@ -48,13 +48,13 @@ const Chat = () => {
   };
 
   useEffect(() => {
-    socket.emit("connect_user", { address: address }, (response) => {
-      console.log(response, "responeh");
-    });
-    socket.on("connect_user", (res) => {
-      localStorage.setItem("currentUser", JSON.stringify(res));
-      setUser(res);
-    });
+    // socket.emit("connect_user", { address: address }, (response) => {
+    //   console.log(response, "responeh");
+    // });
+    // socket.on("connect_user", (res) => {
+    //   localStorage.setItem("currentUser", JSON.stringify(res));
+    //   setUser(res);
+    // });
   }, []);
   return (
     <React.Fragment>

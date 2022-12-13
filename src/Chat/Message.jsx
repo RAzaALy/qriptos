@@ -5,12 +5,16 @@ import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Avatar from "@material-ui/core/Avatar";
 import Menu from "@material-ui/core/Menu";
 import MenuItem from "@material-ui/core/MenuItem";
+import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
 import classnames from "classnames";
+import cookie from "react-cookies";
+import { googleTranslate } from "../Utilities/googleTranslate";
 import IconButton from "@material-ui/core/IconButton";
 import { makeStyles } from "@material-ui/core/styles";
 import { authenticationService } from "../Services/authenticationService";
 import commonUtilites from "../Utilities/common";
+import { useEffect } from "react";
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100%",
@@ -69,12 +73,30 @@ const Message = ({ message, onDelete, image }) => {
   const classes = useStyles();
   const [id, setId] = useState("");
   const [sealed, setSealed] = useState(false);
+  const [translatedMessage, setTranslatedMessage] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const language = cookie.load("language")
+    ? cookie.load("language")
+    : { language: "en", name: "English" };
 
   const handleClick = (event, id) => {
     setAnchorEl(event.currentTarget);
     setId(id);
+  };
+  const translate = (string) => {
+    const message = decodeURIComponent(window.atob(string));
+
+    googleTranslate.translate(
+      message,
+      language.language,
+      function (err, translation) {
+        sealed
+          ? setTranslatedMessage(string)
+          : setTranslatedMessage(translation.translatedText);
+      }
+    );
+    return translatedMessage;
   };
 
   const handleClose = (option) => {
@@ -152,9 +174,7 @@ const Message = ({ message, onDelete, image }) => {
           primary={message.senderId && message.senderId.userName}
           secondary={
             <React.Fragment>
-              {sealed
-                ? message.encryptedMessage
-                : decodeURIComponent(window.atob(message.encryptedMessage))}
+              {translate(message.encryptedMessage) && translatedMessage}
             </React.Fragment>
           }
         />

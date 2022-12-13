@@ -11,10 +11,10 @@ import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
-import GroupIcon from "@material-ui/icons/Group";
 import MenuOpenIcon from "@material-ui/icons/MenuOpen";
 import GroupAddIcon from "@material-ui/icons/GroupAdd";
-import ArrowBackIcon from "@material-ui/icons/ArrowBack";
+
+import MenuItem from "@material-ui/core/MenuItem";
 import { Picker } from "emoji-mart";
 import "emoji-mart/css/emoji-mart.css";
 import ImageIcon from "@material-ui/icons/Image";
@@ -23,15 +23,20 @@ import Message from "./Message";
 import DialogBox from "../components/DialogBox";
 import AddGroupMembers from "../components/AddGroupMembers";
 import GroupInfo from "../components/GroupInfo";
+import SimplePeerFiles from 'simple-peer-files'
 import {
   useDeleteMessage,
   useGetMessages,
   useGetGroupMessages,
   useUploadImage,
+  useGroupInfo,
 } from "../Services/chatService";
 import EmojiEmotionsIcon from "@material-ui/icons/EmojiEmotions";
 import { authenticationService } from "../Services/authenticationService";
 import { socket } from "./Chat";
+import { FormControl, Select } from "@material-ui/core";
+import cookie from "react-cookies";
+import { googleTranslate } from "../Utilities/googleTranslate";
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100%",
@@ -94,13 +99,31 @@ const useStyles = makeStyles((theme) => ({
     width: "15rem",
     height: "10rem",
   },
+  scope: {
+    margin: "2rem",
+  },
 }));
 
 const ChatBox = (props) => {
   const [opened, setOpened] = useState(false);
   const [file, setFile] = useState(null);
   const [addModal, setAddModal] = useState(false);
+  const spf = new SimplePeerFiles()
+  const [langs, setLangs] = useState([]);
+  const language = cookie.load("language")
+    ? cookie.load("language")
+    : { language: "en", name: "English" };
 
+  useEffect(() => {
+    googleTranslate.getSupportedLanguages("en", function (err, languageCodes) {
+      setLangs(languageCodes);
+    });
+  }, []);
+  const onLanguageChange = (e) => {
+    const selectedCountry = e.target.value;
+    cookie.save("language", selectedCountry, { path: "/" });
+    reloadMessages();
+  };
   const handleImage = (e) => {
     const img = e.target.files[0];
 
@@ -126,7 +149,8 @@ const ChatBox = (props) => {
   const [infoModal, setInfoModal] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
-
+  const [groupInfo, setGroupInfo] = useState(null);
+  const getGroupInfo = useGroupInfo();
   const [lastMessage, setLastMessage] = useState(null);
 
   let chatBottom = useRef(null);
@@ -147,6 +171,7 @@ const ChatBox = (props) => {
       setLastMessage(res.encryptedMessage);
     });
   }, []);
+
   useEffect(() => {
     reloadMessages();
     scrollToBottom();
@@ -157,7 +182,12 @@ const ChatBox = (props) => {
       props.user.chatConstantId !== undefined
         ? getGroupMessages(props.user.chatConstantId.chatRoom._id)
             .then((res) => {
-                    // if (
+              getGroupInfo(props.user.chatConstantId.chatRoom._id)
+                .then((res) => {
+                  setGroupInfo(res);
+                })
+                .catch((err) => console.log(err, "error"));
+              // if (
               //   props.user.chatConstantId.chatRoom.createdByUser ===
               //   currentUser._id
               // ) {
@@ -273,9 +303,10 @@ const ChatBox = (props) => {
                     }
                   >
                     <AddGroupMembers
-                      members={props.group.chatRoom.memberId}
-                      groupId={props.group.chatRoom._id}
+                      members={groupInfo?.memberId}
+                      groupId={groupInfo?._id}
                       closeModal={() => setAddModal(false)}
+                      refresh={() => reloadMessages()}
                     />
                   </DialogBox>
                 )}
@@ -295,20 +326,35 @@ const ChatBox = (props) => {
                   }
                 >
                   <GroupInfo
-                    userData={props.user}
+                    group={groupInfo}
                     closeModal={() => setInfoModal(false)}
+                    refresh={() => reloadMessages()}
                   />
                 </DialogBox>
               )}
             </div>
-            <Typography>{props.scope}</Typography>
-            {props.group.type && (
+            <Typography className={classes.scope}>{props.scope}</Typography>
+            <div>
+              <FormControl className="app__dropdown">
+                <Select
+                  variant="outlined"
+                  value={language}
+                  onChange={onLanguageChange}
+                >
+                  <MenuItem value={language}>{language.name}</MenuItem>
+                  {/* map through the countries and  show in dropdown */}
+                  {langs.map((language, index) => (
+                    <MenuItem value={language} key={index}>
+                      {language.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </div>
+            {props.group.type && groupInfo && (
               <Typography>
-                ({props.group.chatRoom.memberId.length}{" "}
-                {props.group.chatRoom.memberId.length > 1
-                  ? "members"
-                  : "member"}
-                )
+                ({groupInfo.memberId.length}{" "}
+                {groupInfo.memberId.length > 1 ? "members" : "member"})
               </Typography>
             )}
           </Paper>

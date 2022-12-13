@@ -14,26 +14,26 @@ import Autocomplete from "@material-ui/lab/Autocomplete";
 import { useAddGroupMember } from "../Services/chatService";
 import { useAddGroupMembersStyles } from "../styles/muiStyles";
 
-const AddGroupMembers = ({ members, groupId, closeModal }) => {
+const AddGroupMembers = ({ members, groupId, closeModal,refresh }) => {
   const getContacts = useViewContact();
   const addGroupMember = useAddGroupMember();
   const classes = useAddGroupMembersStyles();
   const [usersToAdd, setUsersToAdd] = useState([]);
   const [userData, setUserData] = useState([]);
-
+ 
   const usersOnChange = (e, selectedOption) => {
     setUsersToAdd(selectedOption.map((o) => o.chatWithUserId._id));
   };
 
   const handleAddUser = (e) => {
     e.preventDefault();
-
     addGroupMember({ groupId, memberId: usersToAdd })
       .then((res) => {
         socket.on("group_chat_message", (data) => {
-          console.log(data, "add member");
+          
         });
         closeModal();
+        refresh();
       })
       .catch((err) => console.log(err, "error"));
   };

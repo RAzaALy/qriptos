@@ -10,7 +10,6 @@ import commonUtilites from "../Utilities/common";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
 import { makeStyles } from "@material-ui/core/styles";
 import { authenticationService } from "../Services/authenticationService";
-
 const useStyles = makeStyles((theme) => ({
   subheader: {
     display: "flex",
@@ -50,9 +49,10 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 const options = ["Delete", "Archive", "Edit"];
+
 const ITEM_HEIGHT = 48;
 const Chat = ({ chat, user, group, scope, onDelete, onArchive }) => {
-  const [currentUser] = useState(authenticationService.currentUserValue);
+ 
   const [id, setId] = useState({
     deleteId: { type: "", id: null },
     archieveId: null,
@@ -60,6 +60,7 @@ const Chat = ({ chat, user, group, scope, onDelete, onArchive }) => {
   });
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+ 
 
   const classes = useStyles();
   const handleClick = (event, chat) => {
@@ -83,6 +84,8 @@ const Chat = ({ chat, user, group, scope, onDelete, onArchive }) => {
         ? (options[1] = "UnArchive")
         : (options[1] = "Archive");
       onArchive(id.archieveId);
+    } else if (option === "Choose Language") {
+      console.log("open language list");
     }
 
     setAnchorEl(null);
@@ -98,7 +101,7 @@ const Chat = ({ chat, user, group, scope, onDelete, onArchive }) => {
         authenticationService.currentUserValue.userName
       ) {
         id.deleteId.id = recipients[i]._id;
-         
+
         return recipients[i];
       }
     }
@@ -131,7 +134,11 @@ const Chat = ({ chat, user, group, scope, onDelete, onArchive }) => {
                   ? chat.chatConstantId.chatRoom.groupName
                   : handleRecipient(chat).userName
               )}
-              src={`https://secure.gravatar.com/avatar/${chat.chatConstantId.chatRoom ? chat.chatConstantId.chatRoom._id : handleRecipient(chat)._id}?s=150&d=retro`}
+              src={`https://secure.gravatar.com/avatar/${
+                chat.chatConstantId.chatRoom
+                  ? chat.chatConstantId.chatRoom._id
+                  : handleRecipient(chat)._id
+              }?s=150&d=retro`}
             />
             {/* {commonUtilites.getInitialsFromName(
                 chat.chatConstantId.chatRoom

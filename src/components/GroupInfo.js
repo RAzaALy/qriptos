@@ -1,6 +1,11 @@
 import React, { useState } from "react";
-import { useRemoveGroupMember } from "../Services/chatService";
+import {
+  useRemoveGroupMember,
+  useLeaveGroupMember,
+  useMakeAdmin,
+} from "../Services/chatService";
 import DeleteDialog from "../components/DeleteDialog";
+import AdminDialog from "./AdminDialog";
 
 import {
   Typography,
@@ -13,14 +18,16 @@ import {
   ListItemSecondaryAction,
 } from "@material-ui/core";
 import { useGroupInfoStyles } from "../styles/muiStyles";
-
 import { authenticationService } from "../Services/authenticationService";
-const GroupInfo = ({ userData, closeModal }) => {
-  const removeGroupMember = useRemoveGroupMember();
-  const [user] = useState(authenticationService.currentUserValue);
-  const { recieverId, chatConstantId } = userData;
 
-  const isGroupAdmin = user._id === chatConstantId.chatRoom.createdByUser;
+const GroupInfo = ({ group, closeModal, refresh }) => {
+  const removeGroupMember = useRemoveGroupMember();
+
+  const leaveGroupMember = useLeaveGroupMember();
+  const makeAdmin = useMakeAdmin();
+  const [user] = useState(authenticationService.currentUserValue);
+
+  const isGroupAdmin = user._id === group.createdByUser;
   const classes = useGroupInfoStyles();
 
   const handleRemoveUser = (userToRemoveId) => {
@@ -30,8 +37,25 @@ const GroupInfo = ({ userData, closeModal }) => {
     // });
 
     removeGroupMember({
-      groupId: chatConstantId.chatRoom._id,
+      groupId: group._id,
       memberId: [userToRemoveId],
+    })
+      .then((res) => {
+        // console.log(res, "res");
+        closeModal();
+        refresh();
+      })
+      .catch((err) => console.log(err, "error"));
+  };
+  const handleMakeAdmin = (userToMakeAdminId) => {
+    console.log({
+      groupId: group._id,
+      memberId: userToMakeAdminId,
+    });
+
+    makeAdmin({
+      groupId: group._id,
+      memberId: userToMakeAdminId,
     })
       .then((res) => {
         // console.log(res, "res");
@@ -40,7 +64,17 @@ const GroupInfo = ({ userData, closeModal }) => {
       .catch((err) => console.log(err, "error"));
   };
 
-  const handleGroupLeave = () => {};
+  const handleGroupLeave = () => {
+    leaveGroupMember({
+      chatRoomId: group._id,
+    })
+      .then((res) => {
+        // console.log(res, "res");
+        closeModal();
+        refresh();
+      })
+      .catch((err) => console.log(err, "error"));
+  };
 
   return (
     <React.Fragment>
@@ -48,13 +82,12 @@ const GroupInfo = ({ userData, closeModal }) => {
         <div className={classes.topPart}>
           <div className={classes.groupName}>
             <Typography variant="h5" color="secondary">
-              {chatConstantId.chatRoom.groupName}
+              {group.groupName}
             </Typography>
           </div>
 
           <Typography variant="subtitle1" color="secondary">
-            Admin:{" "}
-            <strong>{chatConstantId.chatRoom.adminId[0].userName}</strong>
+            Admin: <strong>{group.adminId}</strong>
           </Typography>
           {!isGroupAdmin && (
             <DeleteDialog handleDelete={handleGroupLeave} type="leave" />
@@ -67,7 +100,8 @@ const GroupInfo = ({ userData, closeModal }) => {
             color="secondary"
             className={classes.membersHeader}
           >
-            {recieverId.length} {recieverId.length > 1 ? "Members" : "Member"}
+            {group.memberId.length}{" "}
+            {group.memberId.length > 1 ? "Members" : "Member"}
           </Typography>
           <List className={classes.membersList}>
             <ListItem>
@@ -79,8 +113,8 @@ const GroupInfo = ({ userData, closeModal }) => {
               </ListItemAvatar>
               <ListItemText primary="You" />
             </ListItem>
-            {userData &&
-              recieverId
+            {group &&
+              group.memberId
                 .filter((u) => user._id !== u._id)
                 .map((u) => (
                   <ListItem key={u._id}>
@@ -95,6 +129,10 @@ const GroupInfo = ({ userData, closeModal }) => {
                       <ListItemSecondaryAction>
                         <DeleteDialog
                           handleDelete={() => handleRemoveUser(u._id)}
+                          username={u.userName}
+                        />
+                        <AdminDialog
+                          handleMakeAdmin={() => handleMakeAdmin(u._id)}
                           username={u.userName}
                         />
                       </ListItemSecondaryAction>
