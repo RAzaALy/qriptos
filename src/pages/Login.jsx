@@ -70,15 +70,12 @@ const Login = () => {
                 value={name}
                 onChange={handleChange}
               >
-               
-                  <FormControlLabel
-                  
-                    key={data.address}
-                    value={data.name}
-                    control={<Radio />}
-                    label={data.name}
-                  />
-               
+                <FormControlLabel
+                  key={data.address}
+                  value={data.name}
+                  control={<Radio />}
+                  label={data.name}
+                />
               </RadioGroup>
             </FormControl>
           </div>

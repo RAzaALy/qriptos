@@ -13,17 +13,16 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import MenuOpenIcon from "@material-ui/icons/MenuOpen";
 import GroupAddIcon from "@material-ui/icons/GroupAdd";
-
 import MenuItem from "@material-ui/core/MenuItem";
 import { Picker } from "emoji-mart";
 import "emoji-mart/css/emoji-mart.css";
-import ImageIcon from "@material-ui/icons/Image";
+import AttachMoney from "@material-ui/icons/AttachMoney";
 import Paper from "@material-ui/core/Paper";
 import Message from "./Message";
 import DialogBox from "../components/DialogBox";
 import AddGroupMembers from "../components/AddGroupMembers";
 import GroupInfo from "../components/GroupInfo";
-import SimplePeerFiles from 'simple-peer-files'
+import SimplePeerFiles from "simple-peer-files";
 import {
   useDeleteMessage,
   useGetMessages,
@@ -31,12 +30,16 @@ import {
   useUploadImage,
   useGroupInfo,
 } from "../Services/chatService";
+import { Formik } from "formik";
+import * as Yup from "yup";
 import EmojiEmotionsIcon from "@material-ui/icons/EmojiEmotions";
 import { authenticationService } from "../Services/authenticationService";
 import { socket } from "./Chat";
 import { FormControl, Select } from "@material-ui/core";
 import cookie from "react-cookies";
 import { googleTranslate } from "../Utilities/googleTranslate";
+import { VolumeDownOutlined } from "@material-ui/icons";
+import { encrypt, decrypt } from "../AES";
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100%",
@@ -108,7 +111,7 @@ const ChatBox = (props) => {
   const [opened, setOpened] = useState(false);
   const [file, setFile] = useState(null);
   const [addModal, setAddModal] = useState(false);
-  const spf = new SimplePeerFiles()
+  const spf = new SimplePeerFiles();
   const [langs, setLangs] = useState([]);
   const language = cookie.load("language")
     ? cookie.load("language")
@@ -138,6 +141,9 @@ const ChatBox = (props) => {
   const handleClickOpen = () => {
     setOpened(true);
   };
+  const handleTransModalOpen = () => {
+    console.log("open trans modal");
+  };
   const handleClosed = () => {
     setOpened(false);
   };
@@ -147,11 +153,14 @@ const ChatBox = (props) => {
   const deleteMessage = useDeleteMessage();
   const uploadImage = useUploadImage();
   const [infoModal, setInfoModal] = useState(false);
+  const [infoModal2, setInfoModal2] = useState(false);
+  const [infoModal3, setInfoModal3] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [groupInfo, setGroupInfo] = useState(null);
   const getGroupInfo = useGroupInfo();
   const [lastMessage, setLastMessage] = useState(null);
+  const [receiverId, setReceiverId] = useState(null);
 
   let chatBottom = useRef(null);
   const classes = useStyles();
@@ -162,20 +171,23 @@ const ChatBox = (props) => {
       })
       .catch((err) => console.log(err, "error"));
   };
-
-  useEffect(() => {
-    socket.on("chat_message", (data) => {
-      setLastMessage(data);
-    });
-    socket.on("group_chat_message", (res) => {
-      setLastMessage(res.encryptedMessage);
-    });
-  }, []);
-
   useEffect(() => {
     reloadMessages();
     scrollToBottom();
   }, [lastMessage, props.scope, props.user]);
+  useEffect(() => {
+    socket.on("chat_message", async (res) => {
+      await setLastMessage(res.message.encryptedMessage);
+      await setReceiverId(res.message.recieverId);
+    });
+
+    receiverId &&
+      receiverId.map((id) => {
+        socket.on(id, (res) => {
+          setLastMessage(res.message.encryptedMessage);
+        });
+      });
+  }, [receiverId]);
 
   const reloadMessages = () => {
     if (props.scope !== null && props.user !== null) {
@@ -187,12 +199,6 @@ const ChatBox = (props) => {
                   setGroupInfo(res);
                 })
                 .catch((err) => console.log(err, "error"));
-              // if (
-              //   props.user.chatConstantId.chatRoom.createdByUser ===
-              //   currentUser._id
-              // ) {
-              //   res.shift();
-              // }
 
               setMessages(res);
             })
@@ -213,9 +219,11 @@ const ChatBox = (props) => {
 
   useEffect(scrollToBottom, [messages]);
 
-  const handleSubmit = (e) => {
+  const handleMsgSubmit = (e) => {
     e.preventDefault();
-    const encryptedMsg = window.btoa(encodeURIComponent(newMessage));
+
+    // const encryptedMsg = window.btoa(encodeURIComponent(newMessage));
+    const encryptedMsg = encrypt(newMessage, process.env.REACT_APP_AES_KEY);
 
     if (props.group.type) {
       socket.emit(
@@ -240,13 +248,10 @@ const ChatBox = (props) => {
           encryptedMessage: encryptedMsg,
           senderId: currentUser._id,
         },
-        (response) => {
-          console.log(response, "responeh");
+        (res) => {
+          console.log(res, "resd");
         }
       );
-      socket.on("chat_message", (res) => {
-        setLastMessage(res.message.encryptMessage);
-      });
     }
 
     setNewMessage("");
@@ -280,7 +285,157 @@ const ChatBox = (props) => {
           </DialogActions>
         </Dialog>
       </div>
+      <>
+        <DialogBox
+          modalOpen={infoModal2}
+          setModalOpen={setInfoModal2}
+          title="Send Transaction"
+        >
+          <Typography variant="h6" color="secondary" className={classes.title}>
+            <p>Enter amount to send:</p>
+          </Typography>
+          <Formik
+            initialValues={{
+              amount: "",
+            }}
+            validationSchema={Yup.object().shape({
+              amount: Yup.number().required("Amount is Required"),
+            })}
+            onSubmit={({ amount }, { setStatus, setSubmitting }) => {
+              console.log("trans money modal submit", amount);
+              setStatus();
+              setInfoModal2(false);
+              // login(address, password).then(
+              //   (user) => {
+              //     const { from } = history.location.state || {
+              //       from: { pathname: "/chat" },
+              //     };
+              //     history.push(from);
+              //   },
+              //   (error) => {
+              //     setSubmitting(false);
+              //     setStatus(error);
+              //   }
+              // );
+            }}
+            validateOnChange={false}
+            validateOnBlur={false}
+          >
+            {({
+              handleSubmit,
+              handleChange,
+              values,
+              touched,
+              isValid,
+              errors,
+            }) => (
+              <form onSubmit={handleSubmit} className={classes.form}>
+                <TextField
+                  id="amount"
+                  className={classes.textField}
+                  name="amount"
+                  label="Amount"
+                  fullWidth={true}
+                  variant="outlined"
+                  margin="normal"
+                  required={true}
+                  helperText={touched.amount ? errors.amount : ""}
+                  error={touched.amount && Boolean(errors.amount)}
+                  value={values.amount}
+                  onChange={handleChange}
+                  type="number"
+                />
 
+                <Button
+                  type="submit"
+                  fullWidth={true}
+                  variant="contained"
+                  color="primary"
+                  className={classes.submit}
+                >
+                  Send Tokens
+                </Button>
+              </form>
+            )}
+          </Formik>
+        </DialogBox>
+      </>
+      <>
+        <DialogBox
+          modalOpen={infoModal3}
+          setModalOpen={setInfoModal3}
+          title="Receive Transaction"
+        >
+          <Typography variant="h6" color="secondary" className={classes.title}>
+            <p>Received Amount</p>
+          </Typography>
+          <Formik
+            initialValues={{
+              amount: "68",
+            }}
+            validationSchema={Yup.object().shape({
+              amount: Yup.number().required("Amount is Required"),
+            })}
+            onSubmit={({ amount }, { setStatus, setSubmitting }) => {
+              console.log("trans money modal submit", amount);
+              setStatus();
+              setInfoModal3(false);
+              // login(address, password).then(
+              //   (user) => {
+              //     const { from } = history.location.state || {
+              //       from: { pathname: "/chat" },
+              //     };
+              //     history.push(from);
+              //   },
+              //   (error) => {
+              //     setSubmitting(false);
+              //     setStatus(error);
+              //   }
+              // );
+            }}
+            validateOnChange={false}
+            validateOnBlur={false}
+          >
+            {({
+              handleSubmit,
+              handleChange,
+              values,
+              touched,
+              isValid,
+              errors,
+            }) => (
+              <form onSubmit={handleSubmit} className={classes.form}>
+                <TextField
+                  id="amount"
+                  disabled
+                  className={classes.textField}
+                  name="amount"
+                  label="Amount"
+                  fullWidth={true}
+                  variant="outlined"
+                  margin="normal"
+                  required={true}
+                  helperText={touched.amount ? errors.amount : ""}
+                  error={touched.amount && Boolean(errors.amount)}
+                  value={values.amount}
+                  onChange={handleChange}
+                  type="number"
+                />
+
+                <Button
+                  type="submit"
+                  fullWidth={true}
+                  variant="contained"
+                  color="primary"
+                  className={classes.submit}
+                >
+                  Approve
+                </Button>
+              </form>
+            )}
+          </Formik>
+        </DialogBox>
+      </>
       <Grid container className={classes.root}>
         <Grid item xs={12} className={classes.headerRow}>
           <Paper className={classes.paper} square elevation={2}>
@@ -384,7 +539,7 @@ const ChatBox = (props) => {
               <div ref={chatBottom} />
             </Grid>
             <Grid item xs={12} className={classes.inputRow}>
-              <form onSubmit={handleSubmit} className={classes.form}>
+              <form onSubmit={handleMsgSubmit} className={classes.form}>
                 <Grid
                   container
                   className={classes.newMessageRow}
@@ -409,20 +564,21 @@ const ChatBox = (props) => {
                     <IconButton type="button" onClick={handleClickOpen}>
                       <EmojiEmotionsIcon />
                     </IconButton>
-                    <input
+                    {/* <input
                       onChange={handleImage}
                       accept="image/*"
                       className={classes.input}
                       id="icon-button-file"
                       type="file"
-                    />
+                    /> */}
                     <label htmlFor="icon-button-file">
                       <IconButton
+                        onClick={() => setInfoModal3(true)}
                         color="primary"
                         className={classes.button}
                         component="span"
                       >
-                        <ImageIcon />
+                        <AttachMoney />
                       </IconButton>
                     </label>
                   </Grid>

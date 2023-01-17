@@ -15,6 +15,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import { authenticationService } from "../Services/authenticationService";
 import commonUtilites from "../Utilities/common";
 import { useEffect } from "react";
+import { decrypt } from "../AES";
 const useStyles = makeStyles((theme) => ({
   root: {
     height: "100%",
@@ -85,7 +86,8 @@ const Message = ({ message, onDelete, image }) => {
     setId(id);
   };
   const translate = (string) => {
-    const message = decodeURIComponent(window.atob(string));
+    // const message = decodeURIComponent(window.atob(string));
+    const message = decrypt(string, process.env.REACT_APP_AES_KEY);
 
     googleTranslate.translate(
       message,

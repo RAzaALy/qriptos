@@ -10,6 +10,7 @@ import commonUtilites from "../Utilities/common";
 import MoreVertIcon from "@material-ui/icons/MoreVert";
 import { makeStyles } from "@material-ui/core/styles";
 import { authenticationService } from "../Services/authenticationService";
+import { decrypt } from "../AES";
 const useStyles = makeStyles((theme) => ({
   subheader: {
     display: "flex",
@@ -157,7 +158,8 @@ const Chat = ({ chat, user, group, scope, onDelete, onArchive }) => {
             secondary={
               <React.Fragment>
                 {/* {cryptr.decrypt(c.encryptedMessage)} */}
-                {decodeURIComponent(window.atob(chat.encryptedMessage))}
+                {/* {decodeURIComponent(window.atob(chat.encryptedMessage))} */}
+                {decrypt(chat.encryptedMessage,process.env.REACT_APP_AES_KEY)}
               </React.Fragment>
             }
           />

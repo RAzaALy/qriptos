@@ -1,10 +1,10 @@
 import { useSnackbar } from "notistack";
 import { instance } from "../Utilities/instance";
+import { socket } from "../Chat/Chat";
 
 // Get list of users conversations
 export function useGetChats() {
   const { enqueueSnackbar } = useSnackbar();
-
   const getChats = () => {
     return instance
       .get("/api/chat/getChat")
@@ -151,6 +151,11 @@ export function useNewChat() {
 export function useNewGroupChat() {
   const { enqueueSnackbar } = useSnackbar();
   const newGroupChat = (name, memberId, msg) => {
+    memberId.map((id) => {
+      socket.on(id, (msg) => {
+        console.log(msg, "msg");
+      });
+    });
     return instance
       .post("/api/chat/createGroup", { name, memberId, msg })
       .then(({ data }) => {
@@ -221,6 +226,16 @@ export function useAddGroupMember() {
   const { enqueueSnackbar } = useSnackbar();
 
   const addGroupMember = ({ groupId, memberId }) => {
+    socket.on(groupId, (res) => {
+      // console.log(res, "in api chatroom id");
+
+      res &&
+        res.map((id) => {
+          socket.on(id, (res) => {
+            // console.log(res, "in api chatroom id2");
+          });
+        });
+    });
     return instance
       .post(`/api/chat/addMember`, { groupId, memberId })
       .then(({ data }) => {
@@ -263,6 +278,17 @@ export function useLeaveGroupMember() {
   const { enqueueSnackbar } = useSnackbar();
 
   const leaveGroupMember = ({ chatRoomId }) => {
+    socket.on(chatRoomId, (res) => {
+      // console.log(res, "in api chatroom id");
+
+      res &&
+        res.map((id) => {
+          socket.on(id, (res) => {
+            // console.log(res, "in api chatroom id2");
+          });
+        });
+    });
+
     return instance
       .post(`/api/chat/leaveGroup`, { chatRoomId })
       .then(({ data }) => {
@@ -284,6 +310,16 @@ export function useMakeAdmin() {
   const { enqueueSnackbar } = useSnackbar();
 
   const makeAdmin = ({ groupId, memberId }) => {
+    socket.on(groupId, (res) => {
+      // console.log(res, "in api chatroom id");
+
+      res &&
+        res.map((id) => {
+          socket.on(id, (res) => {
+            // console.log(res, "in api chatroom id2");
+          });
+        });
+    });
     return instance
       .post(`/api/chat/makeAdmin`, { groupId, memberId })
       .then(({ data }) => {

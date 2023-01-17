@@ -32,9 +32,9 @@ const Welcome = () => {
           <strong>Welcome to Qriptos</strong>
           <br />
           <small>
-            Create your wallet, a digital vault to store your NFT'S. Invite
+            Create your wallet, a digital vault to store your NFTs. Invite
             friends, business partners and family to chat. Scan, sign and make
-            payments. And all ot this encrypted !
+            payments. And all of this encrypted !
           </small>
         </Typography>
 

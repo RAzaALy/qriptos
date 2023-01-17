@@ -17,7 +17,7 @@ import { useViewContact } from "../Services/userService";
 import { useNewGroupChat } from "../Services/chatService";
 import history from "../Utilities/history";
 import { authenticationService } from "../Services/authenticationService";
-
+import { socket } from "../Chat/Chat";
 const useStyles = makeStyles((theme) => ({
   paper: {
     marginTop: theme.spacing(8),
@@ -97,7 +97,9 @@ const NewGroupChat = () => {
 
                   setStatus();
                   newGroupChat(groupName, filtered, encryptedNotify).then(
+                    
                     (user) => {
+                  
                       const { from } = history.location.state || {
                         from: { pathname: "/chat" },
                       };
